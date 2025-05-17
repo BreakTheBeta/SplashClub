@@ -47,9 +47,44 @@ async def notify_new_users(room):
         
         print(messages)
         
-        # Create tasks from coroutines before passing to asyncio.wait
-        tasks = [asyncio.create_task(USERS[room][k].send(messages[k])) for k in messages.keys()]
-        await asyncio.wait(tasks)
+        tasks = []
+        for k, websocket in list(USERS[room].items()):
+            # We'll try to send and handle exceptions separately
+            tasks.append(asyncio.create_task(
+                safe_send(websocket, messages[k], room, k)
+            ))
+        
+        if tasks:  # Only wait if there are tasks
+            await asyncio.wait(tasks)
+
+# Add this helper function to safely send messages and handle disconnections
+async def safe_send(websocket, message, room, user):
+    try:
+        await websocket.send(message)
+    except websockets.exceptions.ConnectionClosed:
+        # Connection is closed, remove the user
+        if room in USERS and user in USERS[room]:
+            USERS[room].pop(user)
+            print(f"Removed disconnected user {user} from room {room}")
+            # If room is now empty, clean it up
+            if not USERS[room]:
+                USERS.pop(room)
+                print(f"Removed empty room {room}")
+
+async def unregister_user(websocket):
+    # Find and remove the user from USERS
+    for room in list(USERS.keys()):
+        for user, socket in list(USERS[room].items()):
+            if socket == websocket:
+                USERS[room].pop(user)
+                print(f"User {user} disconnected from room {room}")
+                # If the room is now empty, you might want to clean it up
+                if not USERS[room]:
+                    USERS.pop(room)
+                else:
+                    # Notify other users about the disconnection
+                    await notify_new_users(room)
+                return
 
 async def send_answers(room):
     messages = {}
@@ -98,50 +133,53 @@ async def start_next_round(room):
 
 async def counter(websocket):
     async for message in websocket:
-        data = json.loads(message)
-        print(data,1)
-        
-        if ClientServerMsgs(data['type']) == ClientServerMsgs.create_room:
-            room = GATEWAY.new_game(TestRoom)
-            data['type'] = ClientServerMsgs.join_room.value
-            data['room'] = room
+        try:
+            data = json.loads(message)
+            print(data,1)
+            
+            if ClientServerMsgs(data['type']) == ClientServerMsgs.create_room:
+                room = GATEWAY.new_game(TestRoom)
+                data['type'] = ClientServerMsgs.join_room.value
+                data['room'] = room
 
-        if ClientServerMsgs(data['type']) == ClientServerMsgs.join_room:
-            ret = GATEWAY.join_room(data['room'], data['user'])
-            if ret == JoinReturnCodes.SUCCESS:
-                await websocket.send(json.dumps(data))
-                USERS[data['room']][data['user']] = websocket
-                await notify_new_users(data['room'])
-            else:
-                await send_error(websocket ,ret)           
+            if ClientServerMsgs(data['type']) == ClientServerMsgs.join_room:
+                ret = GATEWAY.join_room(data['room'], data['user'])
+                if ret == JoinReturnCodes.SUCCESS:
+                    await websocket.send(json.dumps(data))
+                    USERS[data['room']][data['user']] = websocket
+                    await notify_new_users(data['room'])
+                else:
+                    await send_error(websocket ,ret)           
 
-        if ClientServerMsgs(data['type']) == ClientServerMsgs.start_room:
-            ret = GATEWAY.room_start(data['room'])
-            if ret == StartReturnCodes.SUCCESS:
-                await send_prompt(data['room'])
-            else:
-                await send_error(websocket, ret)    
-        if ClientServerMsgs(data['type']) == ClientServerMsgs.submit_prompt:
-            ret = GATEWAY.submit_data(data['room'], data['user'], data)
-            if ret == InteractReturnCodes.SUCCESS:
-                ret, state, _ = GATEWAY.get_room_state(data['room'])
-                print(ret)
-                print(state)
-                if TestRoom.State.VOTING == TestRoom.State(state):
-                    await send_answers(data['room'])
-            else:
-                await send_error(websocket, ret)
-        if ClientServerMsgs(data['type']) == ClientServerMsgs.submit_vote:
-            ret = GATEWAY.submit_data(data['room'], data['user'], data)
-            if ret == InteractReturnCodes.SUCCESS:
-                ret, state, _ = GATEWAY.get_room_state(data['room'])
-                print(ret)
-                print(state)
-                if TestRoom.State.SHOWING_RESULTS == TestRoom.State(state):
-                    await send_results(data['room'])
-                    asyncio.ensure_future(start_next_round(data['room']))
-            else:
-                await send_error(websocket, ret)  
+            if ClientServerMsgs(data['type']) == ClientServerMsgs.start_room:
+                ret = GATEWAY.room_start(data['room'])
+                if ret == StartReturnCodes.SUCCESS:
+                    await send_prompt(data['room'])
+                else:
+                    await send_error(websocket, ret)    
+            if ClientServerMsgs(data['type']) == ClientServerMsgs.submit_prompt:
+                ret = GATEWAY.submit_data(data['room'], data['user'], data)
+                if ret == InteractReturnCodes.SUCCESS:
+                    ret, state, _ = GATEWAY.get_room_state(data['room'])
+                    print(ret)
+                    print(state)
+                    if TestRoom.State.VOTING == TestRoom.State(state):
+                        await send_answers(data['room'])
+                else:
+                    await send_error(websocket, ret)
+            if ClientServerMsgs(data['type']) == ClientServerMsgs.submit_vote:
+                ret = GATEWAY.submit_data(data['room'], data['user'], data)
+                if ret == InteractReturnCodes.SUCCESS:
+                    ret, state, _ = GATEWAY.get_room_state(data['room'])
+                    print(ret)
+                    print(state)
+                    if TestRoom.State.SHOWING_RESULTS == TestRoom.State(state):
+                        await send_results(data['room'])
+                        asyncio.ensure_future(start_next_round(data['room']))
+                else:
+                    await send_error(websocket, ret)  
+        except websockets.exceptions.ConnectionClosed:
+            await unregister_user(websocket)            
 
 
 
