@@ -1,6 +1,7 @@
 // src/App.tsx
 import React, { useState } from 'react';
 import Login from './containers/Login';
+import Waiting from './containers/Waiting';
 import type { ThemeColors } from './theme/theme';
 import { defaultTheme } from './theme/theme';
 import ThemeSwitcher from './components/ThemeSwitcher';
@@ -8,11 +9,19 @@ import { ThemeProvider } from './theme/ThemeContext';
 
 // Additional components would be imported here (Waiting, Game, etc.)
 const App: React.FC = () => {
-  const [curPage, setCurPage] = useState({ page: "login" });
+  interface PageState {
+    page: string;
+    user?: string; // Make user optional with ?
+    room?: string; // Make room optional with ?
+    prompt?: string;
+    answers?: any[]; // or a more specific type
+    results?: any; // or a more specific type
+  }
+  const [curPage, setCurPage] = useState<PageState>({ page: "login" });
   const [theme, setTheme] = useState<ThemeColors>(defaultTheme);
   
   // WebSocket setup
-  const client = new WebSocket('ws://your-websocket-url');
+  const client = new WebSocket('ws://0.0.0.0:6969');
   
   // Determine which page to render
   const renderPage = () => {
@@ -20,7 +29,7 @@ const App: React.FC = () => {
       case "login":
         return <Login client={client} setCurPage={setCurPage} />;
       case "waiting":
-        // return <Waiting client={client} setCurPage={setCurPage} user={curPage.user} room={curPage.room} />;
+        return <Waiting client={client} setCurPage={setCurPage} user={curPage.user} room={curPage.room} />;
         return <div>Waiting Room (to be implemented)</div>;
       case "game":
         // return <Game client={client} setCurPage={setCurPage} user={curPage.user} room={curPage.room} />;

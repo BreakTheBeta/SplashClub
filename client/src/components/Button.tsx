@@ -9,6 +9,7 @@ interface ButtonProps {
   children: React.ReactNode;
   variant?: 'primary' | 'secondary';
   className?: string;
+  fullWidth?: boolean;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -18,22 +19,24 @@ const Button: React.FC<ButtonProps> = ({
   children,
   variant = 'primary',
   className = '',
+  fullWidth = false,
 }) => {
   const theme = useTheme();
   
   // Determine button style based on variant and disabled state
   const getButtonClasses = () => {
     const baseClasses = "px-4 py-2 rounded-md text-white font-medium";
+    const widthClass = fullWidth ? "w-full" : "";
     
     if (disabled) {
-      return `${baseClasses} ${theme.secondary} cursor-not-allowed`;
+      return `${baseClasses} ${theme.secondary} cursor-not-allowed ${widthClass}`;
     }
     
     if (variant === 'primary') {
-      return `${baseClasses} ${theme.primary} ${theme.primaryHover}`;
+      return `${baseClasses} ${theme.primary} ${theme.primaryHover} ${widthClass}`;
     }
     
-    return `${baseClasses} ${theme.secondary} ${theme.secondaryHover}`;
+    return `${baseClasses} ${theme.secondary} ${theme.secondaryHover} ${widthClass}`;
   };
 
   return (
