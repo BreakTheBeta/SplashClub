@@ -1,0 +1,12 @@
+[project]
+name = "jill-box"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    'flask-socketio>=4.2.1',
+    "gunicorn>=20.0.4",
+    "websocket>=0.2.1",
+    "websockets>=15.0.1",
+]
