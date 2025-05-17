@@ -22,27 +22,27 @@ export type ThemeColors = {
   };
   
   export const defaultTheme: ThemeColors = {
-    primary: "bg-green-600",
-    primaryHover: "hover:bg-green-700",
-    secondary: "bg-gray-400",
-    secondaryHover: "hover:bg-gray-500",
-    error: "bg-red-500",
-    success: "bg-green-500",
-    border: "border-gray-300",
-    successBorder: "border-green-500",
-    errorBorder: "border-red-500",
+    primary: "bg-cyan-500",
+    primaryHover: "hover:bg-cyan-600",
+    secondary: "bg-indigo-400",
+    secondaryHover: "hover:bg-indigo-500",
+    error: "bg-purple-600",
+    success: "bg-teal-500",
+    border: "border-cyan-300",
+    successBorder: "border-teal-500",
+    errorBorder: "border-purple-500",
     text: {
-      primary: "text-gray-800",
-      secondary: "text-gray-600",
-      error: "text-red-500",
+      primary: "text-slate-100",
+      secondary: "text-cyan-200",
+      error: "text-purple-400",
     },
     background: {
-      card: "bg-white",
-      page: "bg-gray-50",
-      toast: "bg-red-500",
+      card: "bg-slate-800",
+      page: "bg-slate-900",
+      toast: "bg-indigo-500",
     },
-  };
-  
+  }; 
+
   export const darkTheme: ThemeColors = {
     primary: "bg-blue-600",
     primaryHover: "hover:bg-blue-700",
