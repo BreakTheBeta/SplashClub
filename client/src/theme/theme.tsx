@@ -43,7 +43,6 @@ export type ThemeColors = {
     },
   };
   
-  // You can create alternative themes
   export const darkTheme: ThemeColors = {
     primary: "bg-blue-600",
     primaryHover: "hover:bg-blue-700",
@@ -65,7 +64,3 @@ export type ThemeColors = {
       toast: "bg-red-600",
     },
   };
-  
-  // Create a theme context to easily switch themes
-  // This could be expanded in the future
-  export const activeTheme = defaultTheme;

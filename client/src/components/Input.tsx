@@ -24,19 +24,27 @@ const Input: React.FC<InputProps> = ({
 }) => {
   const theme = useTheme();
   
+  // Check if we're using a dark theme
+  const isDarkTheme = theme.background.card.includes('bg-gray-800');
+  
   // Determine input border color based on validation state
   const getInputClasses = () => {
     const baseClasses = "w-full p-2 border-2 rounded-md focus:outline-none focus:ring-2";
     
+    // Set appropriate background and text colors for the input
+    const bgClass = isDarkTheme ? "bg-gray-700" : "bg-white";
+    const textClass = isDarkTheme ? "text-white" : "text-gray-800";
+    const placeholderClass = isDarkTheme ? "placeholder-gray-400" : "placeholder-gray-500";
+    
     if (isValid === null || value.length === 0) {
-      return `${baseClasses} ${theme.border} ${theme.text.primary}`;
+      return `${baseClasses} ${bgClass} ${textClass} ${placeholderClass} ${theme.border}`;
     }
     
     if (isValid) {
-      return `${baseClasses} ${theme.successBorder} ${theme.text.primary}`;
+      return `${baseClasses} ${bgClass} ${textClass} ${placeholderClass} ${theme.successBorder}`;
     }
     
-    return `${baseClasses} ${theme.errorBorder} ${theme.text.primary}`;
+    return `${baseClasses} ${bgClass} ${textClass} ${placeholderClass} ${theme.errorBorder}`;
   };
 
   return (

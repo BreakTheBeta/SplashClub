@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import Toast from "../components/Toast";
-import { activeTheme } from "../theme/theme";
+import { useTheme } from '../theme/ThemeContext';
 
 // Define interfaces for props and message data
 interface LoginProps {
@@ -23,6 +23,8 @@ const Login: React.FC<LoginProps> = (props) => {
   const [user, setUser] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
+
+  const theme = useTheme();
 
   useEffect(() => {
     props.client.onmessage = (message: MessageEvent) => {
@@ -74,11 +76,11 @@ const Login: React.FC<LoginProps> = (props) => {
   }
 
   return (
-    <div className={`container mx-auto px-4 py-8 ${activeTheme.background.page}`}>
+    <div className={`container mx-auto px-4 py-8 ${theme.background.page}`}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Join Room Form */}
-        <div className={`border ${activeTheme.border} rounded-lg p-6 shadow-sm ${activeTheme.background.card}`}>
-          <h2 className={`text-xl font-semibold mb-4 ${activeTheme.text.primary}`}>Join Existing Room</h2>
+        <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card}`}>
+          <h2 className={`text-xl font-semibold mb-4 ${theme.text.primary}`}>Join Existing Room</h2>
           <form onSubmit={handleJoin} className="space-y-4">
             <Input
               autoFocus={true}
@@ -107,8 +109,8 @@ const Login: React.FC<LoginProps> = (props) => {
         </div>
         
         {/* Create Room Form */}
-        <div className={`border ${activeTheme.border} rounded-lg p-6 shadow-sm ${activeTheme.background.card}`}>
-          <h2 className={`text-xl font-semibold mb-4 ${activeTheme.text.primary}`}>Create New Room</h2>
+        <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card}`}>
+          <h2 className={`text-xl font-semibold mb-4 ${theme.text.primary}`}>Create New Room</h2>
           <form onSubmit={handleCreate} className="space-y-4">
             <Input
               id="user_input2"
