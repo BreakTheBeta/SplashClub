@@ -36,7 +36,7 @@ const App: React.FC = () => {
         <div className="absolute top-4 right-4">
           <ThemeSwitcher setTheme={setTheme} currentTheme={theme} />
         </div>
-        <div className={`w-full max-w-md mx-auto flex justify-center container px-4 py-8 ${theme.background.card} ${theme.text.primary}`}>
+        <div className={`w-full max-w-4xl mx-auto flex justify-center px-4 py-8 ${theme.background.card} ${theme.text.primary}`}>
           {renderPage()}
         </div>
       </div>
