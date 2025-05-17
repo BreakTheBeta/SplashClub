@@ -1,4 +1,4 @@
-
+import pytest
 import string
 import json
 import random
@@ -11,7 +11,7 @@ from typing import (
     Tuple
 )
 
-from jill_box.game import GameGateway, Room, StartReturnCodes, InteractReturnCodes
+from jill_box.game import Room, StartReturnCodes, InteractReturnCodes
 
 
 def _load_prompts() -> List[Tuple[str, str]]:
@@ -22,6 +22,7 @@ def _load_prompts() -> List[Tuple[str, str]]:
     return prompts
 
 
+@pytest.mark.xfail(reason="Not a test class")
 class TestRoom(Room):
 
     class State(Enum):
@@ -134,56 +135,3 @@ class TestRoom(Room):
             ret = json.dumps({'answer': self.prompts[self.round][1],'earned': self.__votes_to_score(), 'total': self.scores})
             return (InteractReturnCodes.SUCCESS, self.state, ret)
         return (InteractReturnCodes.WRONG_STATE, self.state, '')
-
-def main():
-    gateway = GameGateway()
-
-    room = gateway.new_game(TestRoom)
-
-    name1 = "tester1"
-    name2 = "tester2"
-    name3 = "tester3"
-
-    print(gateway.join_room(room, name1))
-    print(gateway.join_room(room, name2))
-    print(gateway.join_room(room, name3))
-
-    print(gateway.room_start(room))
-
-    print(gateway.get_room_state(room))
-
-    print(gateway.submit_data(room, name1, {'answer': 'A'}))
-    print(gateway.submit_data(room, name2, {'answer': 'B'}))
-    print(gateway.submit_data(room, name3, {'answer': 'C'}))
-
-    print(gateway.get_room_state(room))
-    print(gateway.get_room_state(room, name2))
-
-    print(gateway.submit_data(room, name1, {'vote': '1'}))
-    print(gateway.submit_data(room, name2, {'vote': '0'}))
-    print(gateway.submit_data(room, name3, {'vote': '1'}))
-
-    print(gateway.get_room_state(room))
-
-    print(gateway.submit_data(room, name1, {}))
-    print(gateway.submit_data(room, name2, {}))
-    print(gateway.submit_data(room, name3, {}))
-
-
-    print(gateway.get_room_state(room))
-
-    print(gateway.submit_data(room, name1, {'answer': 'A2'}))
-    print(gateway.submit_data(room, name2, {'answer': 'B2'}))
-    print(gateway.submit_data(room, name3, {'answer': 'C2'}))
-
-    print(gateway.get_room_state(room))
-    print(gateway.get_room_state(room, name2))
-
-    print(gateway.submit_data(room, name1, {'vote': '0'}))
-    print(gateway.submit_data(room, name2, {'vote': '0'}))
-    print(gateway.submit_data(room, name3, {'vote': '1'}))
-
-    print(gateway.get_room_state(room))
-
-if __name__ == "__main__":
-    main()
