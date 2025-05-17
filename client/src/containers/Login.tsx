@@ -1,4 +1,9 @@
+// src/pages/Login.tsx
 import React, { useState, useEffect } from "react";
+import Button from "../components/Button";
+import Input from "../components/Input";
+import Toast from "../components/Toast";
+import { activeTheme } from "../theme/theme";
 
 // Define interfaces for props and message data
 interface LoginProps {
@@ -68,115 +73,67 @@ const Login: React.FC<LoginProps> = (props) => {
     }));
   }
 
-  // Determine input border color based on validation
-  const getRoomInputClasses = () => {
-    if (room.length === 0) return "border-gray-300";
-    if (validateRoom()) return "border-green-500";
-    return "border-red-500";
-  };
-
-  const getUserInputClasses = () => {
-    if (user.length === 0) return "border-gray-300";
-    if (user.length > 0) return "border-green-500";
-    return "border-gray-300";
-  };
-
-  // Auto-hide error message after 6 seconds
-  useEffect(() => {
-    if (showError) {
-      const timer = setTimeout(() => {
-        setShowError(false);
-      }, 6000);
-      return () => clearTimeout(timer);
-    }
-  }, [showError]);
-
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className={`container mx-auto px-4 py-8 ${activeTheme.background.page}`}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Join Room Form */}
-        <div className="border border-gray-300 rounded-lg p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Join Existing Room</h2>
+        <div className={`border ${activeTheme.border} rounded-lg p-6 shadow-sm ${activeTheme.background.card}`}>
+          <h2 className={`text-xl font-semibold mb-4 ${activeTheme.text.primary}`}>Join Existing Room</h2>
           <form onSubmit={handleJoin} className="space-y-4">
-            <div>
-              <input
-                autoFocus
-                id="room_input"
-                className={`w-full p-2 border-2 rounded-md focus:outline-none focus:ring-2 ${getRoomInputClasses()}`}
-                placeholder="Enter Room Code"
-                autoComplete="off"
-                value={room}
-                onChange={(e) => setRoom(e.target.value)}
-              />
-              {room.length >= 4 && !validateRoom() && (
-                <p className="text-red-500 text-sm mt-1">Room code must be 4 letters</p>
-              )}
-            </div>
-            <div>
-              <input
-                id="user_input"
-                className={`w-full p-2 border-2 rounded-md focus:outline-none focus:ring-2 ${getUserInputClasses()}`}
-                placeholder="Enter Your Name"
-                value={user}
-                onChange={(e) => setUser(e.target.value)}
-              />
-            </div>
-            <button
+            <Input
+              autoFocus={true}
+              id="room_input"
+              placeholder="Enter Room Code"
+              value={room}
+              onChange={(e) => setRoom(e.target.value)}
+              isValid={room.length === 0 ? null : validateRoom()}
+              errorMessage="Room code must be 4 letters"
+            />
+            <Input
+              id="user_input"
+              placeholder="Enter Your Name"
+              value={user}
+              onChange={(e) => setUser(e.target.value)}
+              isValid={user.length === 0 ? null : user.length > 0}
+            />
+            <Button
               type="submit"
               disabled={!validateJoin()}
-              className={`px-4 py-2 rounded-md text-white font-medium ${
-                validateJoin() 
-                  ? "bg-green-600 hover:bg-green-700" 
-                  : "bg-gray-400 cursor-not-allowed"
-              }`}
+              variant="primary"
             >
               Join Room
-            </button>
+            </Button>
           </form>
         </div>
         
         {/* Create Room Form */}
-        <div className="border border-gray-300 rounded-lg p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Create New Room</h2>
+        <div className={`border ${activeTheme.border} rounded-lg p-6 shadow-sm ${activeTheme.background.card}`}>
+          <h2 className={`text-xl font-semibold mb-4 ${activeTheme.text.primary}`}>Create New Room</h2>
           <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <input
-                id="user_input2"
-                className={`w-full p-2 border-2 rounded-md focus:outline-none focus:ring-2 ${getUserInputClasses()}`}
-                placeholder="Enter Your Name"
-                value={user}
-                onChange={(e) => setUser(e.target.value)}
-              />
-            </div>
-            <button
+            <Input
+              id="user_input2"
+              placeholder="Enter Your Name"
+              value={user}
+              onChange={(e) => setUser(e.target.value)}
+              isValid={user.length === 0 ? null : user.length > 0}
+            />
+            <Button
               type="submit"
               disabled={!validateCreate()}
-              className={`px-4 py-2 rounded-md text-white font-medium ${
-                validateCreate() 
-                  ? "bg-green-600 hover:bg-green-700" 
-                  : "bg-gray-400 cursor-not-allowed"
-              }`}
+              variant="primary"
             >
               Create Room
-            </button>
+            </Button>
           </form>
         </div>
       </div>
       
       {/* Error Toast */}
-      {showError && (
-        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96">
-          <div className="bg-red-500 text-white px-4 py-3 rounded-md shadow-lg flex justify-between items-center">
-            <span>{error}</span>
-            <button 
-              onClick={handleCloseError} 
-              className="text-white ml-4 focus:outline-none"
-            >
-              &times;
-            </button>
-          </div>
-        </div>
-      )}
+      <Toast
+        message={error}
+        isVisible={showError}
+        onClose={handleCloseError}
+      />
     </div>
   );
 };
