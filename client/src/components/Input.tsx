@@ -1,4 +1,3 @@
-// src/components/Input.tsx
 import React from 'react';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -30,14 +29,14 @@ const Input: React.FC<InputProps> = ({
     const baseClasses = "w-full p-2 border-2 rounded-md focus:outline-none focus:ring-2";
     
     if (isValid === null || value.length === 0) {
-      return `${baseClasses} ${theme.border}`;
+      return `${baseClasses} ${theme.border} ${theme.text.primary}`;
     }
     
     if (isValid) {
-      return `${baseClasses} ${theme.successBorder}`;
+      return `${baseClasses} ${theme.successBorder} ${theme.text.primary}`;
     }
     
-    return `${baseClasses} ${theme.errorBorder}`;
+    return `${baseClasses} ${theme.errorBorder} ${theme.text.primary}`;
   };
 
   return (
