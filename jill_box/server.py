@@ -40,6 +40,7 @@ async def send_error(websocket, error):
 
 async def notify_new_users(room):
     if len(USERS.get(room, {})) > 1:  # notify about new users
+        print("notifying users")
         messages = {}
         for user in USERS[room].keys():
             others = [other for other in USERS[room].keys() if other != user]
@@ -83,6 +84,7 @@ async def unregister_user(websocket):
                     USERS.pop(room)
                 else:
                     # Notify other users about the disconnection
+                    print("notifying of disconnection")
                     await notify_new_users(room)
                 return
 
@@ -147,6 +149,7 @@ async def counter(websocket):
                 if ret == JoinReturnCodes.SUCCESS:
                     await websocket.send(json.dumps(data))
                     USERS[data['room']][data['user']] = websocket
+                    print("join room message being sent")
                     await notify_new_users(data['room'])
                 else:
                     await send_error(websocket ,ret)           

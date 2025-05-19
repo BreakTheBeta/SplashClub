@@ -1,6 +1,6 @@
-.PHONEY: server, client, test, kill
+.PHONY: server, clients, test, kill
 
-client:
+clients:
 	cd http/app && yarn start
 
 server:

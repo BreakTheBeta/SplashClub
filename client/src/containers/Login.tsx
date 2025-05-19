@@ -1,82 +1,115 @@
-// src/pages/Login.tsx
+// src/containers/Login.tsx (or src/pages/Login.tsx)
 import React, { useState, useEffect } from "react";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import Toast from "../components/Toast";
 import { useTheme } from '../theme/ThemeContext';
+import type { PageState, WsMessageData } from '../types'; // Import shared types
+import useWebSocket from "react-use-websocket";
+import { WS_URL } from "../const";
 
-// Define interfaces for props and message data
 interface LoginProps {
-  client: WebSocket;
-  setCurPage: React.Dispatch<React.SetStateAction<any>>;
-}
-
-interface MessageData {
-  type: string;
-  user?: string;
-  room?: string;
-  msg?: string;
+  setCurPage: React.Dispatch<React.SetStateAction<PageState>>;
 }
 
 const Login: React.FC<LoginProps> = (props) => {
-  const [room, setRoom] = useState<string>("");
-  const [user, setUser] = useState<string>("");
+  const [roomInput, setRoomInput] = useState<string>(""); // For "Join Room" form
+  const [userInput, setUserInput] = useState<string>(""); // Shared for both forms
   const [error, setError] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
+  const { sendMessage, lastMessage } = useWebSocket(WS_URL, {
+    share: true,
+  });
 
   const theme = useTheme();
 
   useEffect(() => {
-    props.client.onmessage = (message: MessageEvent) => {
-      const data: MessageData = JSON.parse(message.data as string);
-      if (data.type === 'error') {
-        setError(data.msg || "An error occurred");
+    if (lastMessage !== null) {
+      try {
+        const data: WsMessageData = JSON.parse(lastMessage.data as string);
+        // console.log("Login component received message:", data);
+
+        // Define what message types indicate a successful login/room entry
+        // These should match what your backend sends.
+        const successTypes = ['join_success', 'create_success', 'room_created', 'joined_room']; // Add all relevant success types
+
+        if (successTypes.includes(data.type)) {
+          if (data.user && data.room) {
+            props.setCurPage({
+              page: "waiting",
+              user: data.user,
+              room: data.room
+            });
+          } else {
+            // This case might indicate a backend issue or unexpected success message format
+            setError("Login successful, but user/room data missing. Please try again.");
+            setShowError(true);
+            console.error("Success message missing user/room:", data);
+          }
+        } else if (data.type === 'error') {
+          setError(data.msg || "An unknown error occurred");
+          setShowError(true);
+        }
+        // Other message types are ignored by the Login component,
+        // or might be handled by App.tsx if they are global.
+      } catch (e) {
+        console.error("Failed to parse WebSocket message in Login:", e, lastMessage.data);
+        setError("Received an invalid message from the server.");
         setShowError(true);
-      } else {
-        props.setCurPage({
-          page: "waiting", 
-          user: data.user, 
-          room: data.room
-        });
       }
-    };
-  });
+    }
+  }, [lastMessage, props.setCurPage]);
 
-  function validateRoom(): boolean {
-    return room.length === 4 && RegExp('^[a-zA-Z]+$').test(room);
+  function validateRoomCode(code: string): boolean {
+    return code.length === 4 && /^[a-zA-Z]+$/.test(code);
   }
 
-  function validateJoin(): boolean {
-    return room.length === 4 && RegExp('^[a-zA-Z]+$').test(room) && user.length > 0;
+  function validateUsername(name: string): boolean {
+    return name.trim().length > 0;
   }
 
-  function validateCreate(): boolean {
-    return user.length > 0;
+  function canJoin(): boolean {
+    return validateRoomCode(roomInput) && validateUsername(userInput);
   }
 
-  function handleJoin(event: React.FormEvent): void {
+  function canCreate(): boolean {
+    return validateUsername(userInput);
+  }
+
+  function handleJoin(event: any): void {
     event.preventDefault();
-    props.client.send(JSON.stringify({
+    if (!canJoin()) {
+      setError("Please enter a valid 4-letter room code and your name.");
+      setShowError(true);
+      return;
+    }
+    sendMessage(JSON.stringify({
       type: "join_room",
-      user: user,
-      room: room
+      user: userInput.trim(),
+      room: roomInput // Standardize room code to uppercase, for example
+    }));
+  }
+
+  function handleCreate(event: any): void {
+    event.preventDefault();
+    if (!canCreate()) {
+      setError("Please enter your name to create a room.");
+      setShowError(true);
+      return;
+    }
+    sendMessage(JSON.stringify({
+      type: "create_room",
+      user: userInput.trim()
     }));
   }
 
   const handleCloseError = (): void => {
     setShowError(false);
+    setError("");
   };
 
-  function handleCreate(event: React.FormEvent): void {
-    event.preventDefault();
-    props.client.send(JSON.stringify({
-      type: "create_room",
-      user: user
-    }));
-  }
-
   return (
-    <div className={`container mx-auto px-4 py-8 ${theme.background.page}`}>
+    <div className={`container mx-auto px-4 py-8`}> {/* Removed theme.background.page as App handles it */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Join Room Form */}
         <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card}`}>
@@ -85,52 +118,58 @@ const Login: React.FC<LoginProps> = (props) => {
             <Input
               autoFocus={true}
               id="room_input"
-              placeholder="Enter Room Code"
-              value={room}
-              onChange={(e) => setRoom(e.target.value)}
-              isValid={room.length === 0 ? null : validateRoom()}
+              label="Room Code"
+              placeholder="Enter 4-letter Room Code"
+              value={roomInput}
+              onChange={(e) => setRoomInput(e.target.value)} // Auto uppercase
+              isValid={roomInput.length === 0 ? null : validateRoomCode(roomInput)}
               errorMessage="Room code must be 4 letters"
             />
             <Input
-              id="user_input"
+              id="user_input_join" // Unique ID if needed, though label association is key
+              label="Your Name"
               placeholder="Enter Your Name"
-              value={user}
-              onChange={(e) => setUser(e.target.value)}
-              isValid={user.length === 0 ? null : user.length > 0}
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              isValid={userInput.length === 0 ? null : validateUsername(userInput)}
+              errorMessage="Name cannot be empty"
             />
             <Button
               type="submit"
-              disabled={!validateJoin()}
+              disabled={!canJoin()}
               variant="primary"
+              fullWidth
             >
               Join Room
             </Button>
           </form>
         </div>
-        
+
         {/* Create Room Form */}
         <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card}`}>
           <h2 className={`text-xl font-semibold mb-4 ${theme.text.primary}`}>Create New Room</h2>
           <form onSubmit={handleCreate} className="space-y-4">
             <Input
-              id="user_input2"
+              id="user_input_create" // Unique ID
+              label="Your Name"
               placeholder="Enter Your Name"
-              value={user}
-              onChange={(e) => setUser(e.target.value)}
-              isValid={user.length === 0 ? null : user.length > 0}
+              value={userInput} // Shared user input state
+              onChange={(e) => setUserInput(e.target.value)}
+              isValid={userInput.length === 0 ? null : validateUsername(userInput)}
+              errorMessage="Name cannot be empty"
             />
             <Button
               type="submit"
-              disabled={!validateCreate()}
+              disabled={!canCreate()}
               variant="primary"
+              fullWidth
             >
               Create Room
             </Button>
           </form>
         </div>
       </div>
-      
-      {/* Error Toast */}
+
       <Toast
         message={error}
         isVisible={showError}
