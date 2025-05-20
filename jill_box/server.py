@@ -21,7 +21,7 @@ class ClientServerMsgs(Enum):
     create_room = 'create_room'
     join_room = 'join_room'
     start_room = 'start_room'
-    submit_prompt = 'submit_prompt'
+    submit_answer = 'submit_answer'
     submit_vote = 'submit_vote'
 
 
@@ -160,7 +160,7 @@ async def counter(websocket):
                     await send_prompt(data['room'])
                 else:
                     await send_error(websocket, ret)    
-            if ClientServerMsgs(data['type']) == ClientServerMsgs.submit_prompt:
+            if ClientServerMsgs(data['type']) == ClientServerMsgs.submit_answer:
                 ret = GATEWAY.submit_data(data['room'], data['user'], data)
                 if ret == InteractReturnCodes.SUCCESS:
                     ret, state, _ = GATEWAY.get_room_state(data['room'])

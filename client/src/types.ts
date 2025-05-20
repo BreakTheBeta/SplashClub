@@ -17,5 +17,6 @@ export interface PageState {
     msg?: string;     // For error or general messages
     prompt?: string;  // For starting game/prompt
     success?: boolean; // For responses like join_success
+    answers?: string[];
     // Add any other fields your backend might send
   }
