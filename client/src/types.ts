@@ -4,7 +4,7 @@ export interface PageState {
     user?: string;
     room?: string;
     prompt?: string;
-    answers?: any[];
+    answers?: Answers;
     results?: any;
   }
   
@@ -17,6 +17,15 @@ export interface PageState {
     msg?: string;     // For error or general messages
     prompt?: string;  // For starting game/prompt
     success?: boolean; // For responses like join_success
-    answers?: string[];
+    answers?: Answers;
     // Add any other fields your backend might send
   }
+
+  export interface ShowResultsMessageData extends WsMessageData {
+    type: "show_results";
+    results: any; // Define 'any' more strictly
+  }
+interface Answers {
+  prompt: string;    // The prompt text for this voting round
+  answers: string[]; // Array of answer strings to vote on
+}

@@ -45,8 +45,7 @@ const Prompt: React.FC<PromptProps> = (props) => {
           setShowError(true);
           setWaiting(false); // Re-enable form if submission caused an error
         } else if (
-          data.type === "all_answers_submitted" ||
-          data.type === "vote_start"
+          data.type === "ask_vote"
         ) {
           // Assuming a specific type for transition.
           // The old code transitioned on any non-error message.
@@ -58,7 +57,7 @@ const Prompt: React.FC<PromptProps> = (props) => {
             user: props.user,
             room: props.room,
             prompt: props.prompt, // Pass the prompt along to the vote page
-            answers: data.answers || [], // Ensure answers is an array
+            answers: data.answers || {"prompt": "", "answers": []}, // Ensure answers is an array
           });
           // }
         }

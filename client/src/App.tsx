@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import Login from './containers/Login';
 import Prompt from './containers/Prompt';
+import Vote from './containers/Vote';
 import Waiting from './containers/Waiting';
 import type { ThemeColors } from './theme/theme';
 import { defaultTheme } from './theme/theme';
@@ -74,6 +75,14 @@ const App: React.FC = () => {
             prompt={curPage.prompt || "prompt empty"}
         ></Prompt>
         return <div>Prompt Page: User: {curPage.user}, Room: {curPage.room}, Prompt: {curPage.prompt} (to be implemented)</div>;
+      case "vote": // Assuming "prompt" is a distinct page state
+        return <Vote
+            setCurPage={setCurPage}
+            user={curPage.user || "user empty"}
+            room={curPage.room || "room empty"}
+            answers={curPage.answers || {"prompt": "empty prompt", 'answers': ["EMPTY ANSWERS"]}}
+        >
+        </Vote>
       case "game":
         return <div>Game Room: User: {curPage.user}, Room: {curPage.room}, Prompt: {curPage.prompt} (to be implemented)</div>;
       default:
