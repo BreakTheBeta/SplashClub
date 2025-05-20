@@ -43,7 +43,7 @@ async def notify_new_users(room):
         print("notifying users")
         messages = {}
         for user in USERS[room].keys():
-            others = [other for other in USERS[room].keys() if other != user]
+            others = [other for other in USERS[room].keys()]
             messages[user] = json.dumps({"type": ServerClientMsgs.user_update.value, "users": others})
         
         print(messages)
