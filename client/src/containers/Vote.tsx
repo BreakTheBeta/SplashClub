@@ -46,6 +46,7 @@ const Vote: React.FC<VoteProps> = (props) => {
           setShowError(true);
           setWaiting(false); // Re-enable buttons if vote submission caused an error
         } else if (data.type === "show_results") {
+          console.log("need to show the results")
           // Ensure this is the correct type for ShowResultsMessageData
           const resultsData = data as ShowResultsMessageData;
           if (resultsData.results) {
