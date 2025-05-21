@@ -76,6 +76,13 @@ const Results: React.FC<ResultsProps> = (props) => {
         if (data.type === "error") {
           setError(data.msg || "An unexpected error occurred from the server.");
           setShowError(true);
+        } else if (data.type === "ask_prompt") {
+            props.setCurPage({
+              page: "prompt",
+              user: props.user,
+              room: props.room,
+              prompt: data.prompt
+            });
         } else if (data.type === 'show_results') {
           if (data.results) {
             const processedResults = {
