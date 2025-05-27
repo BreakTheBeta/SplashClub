@@ -7,19 +7,22 @@ import type { PageState, WsMessageData, ShowResultsMessageData } from "../types"
 import useWebSocket from "react-use-websocket";
 import { WS_URL } from "../const";
 
-interface Answers {
-  prompt: string;    // The prompt text for this voting round
-  answers: string[]; // Array of answer strings to vote on
+
+interface Answer {
+  id: string;
+  text: string;
 }
+
 interface VoteProps {
   setCurPage: React.Dispatch<React.SetStateAction<PageState>>;
   user: string;
   room: string;
-  answers: Answers;
+  prompt: string;    // The prompt text for this voting round
+  answers: Answer[];
 }
 
 const Vote: React.FC<VoteProps> = (props) => {
-  const [selected, setSelected] = useState<number>(-1); // Index of the selected answer
+  const [selected, setSelected] = useState<string>(""); // Index of the selected answer
   const [error, setError] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
   const [waiting, setWaiting] = useState<boolean>(false); // True when vote submitted, waiting for others
@@ -55,7 +58,7 @@ const Vote: React.FC<VoteProps> = (props) => {
               user: props.user,
               room: props.room,
               results: resultsData.results,
-              prompt: props.answers.prompt, // Pass the current prompt to the results page
+              prompt: props.prompt, // Pass the current prompt to the results page
             });
           } else {
             console.error("Message 'show_results' received without 'results' data:", data);
@@ -77,19 +80,19 @@ const Vote: React.FC<VoteProps> = (props) => {
         setWaiting(false);
       }
     }
-  }, [lastMessage, props.setCurPage, props.user, props.room, props.answers.prompt]);
+  }, [lastMessage, props.setCurPage, props.user, props.room, props.prompt]);
 
-  const handleVote = (index: number): void => {
-    if (waiting || selected !== -1) return; // Don't allow voting if already waiting or already voted
+  const handleVote = (id: string): void => {
+    if (waiting || selected !== "") return; // Don't allow voting if already waiting or already voted
 
-    setSelected(index);
+    setSelected(id);
     setWaiting(true);
     sendMessage(
       JSON.stringify({
         type: "submit_vote",
         room: props.room,
         user: props.user,
-        vote: index, // Send the index of the voted answer
+        voted_for_answer_id: id,
       })
     );
   };
@@ -98,8 +101,8 @@ const Vote: React.FC<VoteProps> = (props) => {
     setShowError(false);
   };
 
-  const getButtonVariant = (index: number): "primary" | "secondary" => {
-    if (selected < 0) return "primary"; // No selection yet
+  const getButtonVariant = (index: string): "primary" | "secondary" => {
+    if (selected !== "") return "primary"; // No selection yet
     return selected === index ? "primary" : "secondary"; // Highlight selected
   };
 
@@ -121,22 +124,22 @@ const Vote: React.FC<VoteProps> = (props) => {
           } rounded-r-md`}
         >
           <p className={`italic ${theme.text.secondary} text-lg`}>
-            {props.answers.prompt}
+            {props.prompt}
           </p>
         </div>
 
         {/* Answer Options */}
         <div className="space-y-3 mb-6">
-          {props.answers.answers.map((answer, i) => (
+          {props.answers.map((answer, i) => (
             <Button
               key={`answer-${i}`}
-              variant={getButtonVariant(i)}
-              disabled={waiting || selected !== -1} // Disable after a vote is cast and while waiting
-              onClick={() => handleVote(i)}
+              variant={getButtonVariant(answer.id)}
+              disabled={waiting || selected !== ""} // Disable after a vote is cast and while waiting
+              onClick={() => handleVote(answer.id)}
               fullWidth
-              className={selected === i ? "ring-2 ring-offset-2 ring-offset-gray-800 ring-cyan-500" : ""}
+              className={selected === answer.id ? "ring-2 ring-offset-2 ring-offset-gray-800 ring-cyan-500" : ""}
             >
-              {answer.endsWith('\\n') ? answer.slice(0, -2) : answer} {/* Remove trailing \n if present */}
+              {answer.text.endsWith('\\n') ? answer.text.slice(0, -2) : answer.text} {/* Remove trailing \n if present */}
             </Button>
           ))}
         </div>
@@ -145,7 +148,7 @@ const Vote: React.FC<VoteProps> = (props) => {
         {waiting && (
           <div className="text-center mt-4">
             <p className={`${theme.text.secondary} italic`}>
-              {selected !== -1 ? "Vote submitted! Waiting for other players..." : "Submitting vote..."}
+              {selected !== "" ? "Vote submitted! Waiting for other players..." : "Submitting vote..."}
             </p>
           </div>
         )}

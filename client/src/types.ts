@@ -4,7 +4,7 @@ export interface PageState {
     user?: string;
     room?: string;
     prompt?: string;
-    answers?: Answers;
+    answers?: Answer[];
     results?: any;
   }
   
@@ -17,7 +17,7 @@ export interface PageState {
     msg?: string;     // For error or general messages
     prompt?: string;  // For starting game/prompt
     success?: boolean; // For responses like join_success
-    answers?: Answers;
+    answers?: Answer[];
     // Add any other fields your backend might send
   }
 
@@ -25,7 +25,7 @@ export interface PageState {
     type: "show_results";
     results: any; // Define 'any' more strictly
   }
-interface Answers {
-  prompt: string;    // The prompt text for this voting round
-  answers: string[]; // Array of answer strings to vote on
+interface Answer {
+  id: string;    // The prompt text for this voting round
+  text: string; // Array of answer strings to vote on
 }

@@ -31,7 +31,7 @@ const Login: React.FC<LoginProps> = (props) => {
 
         // Define what message types indicate a successful login/room entry
         // These should match what your backend sends.
-        const successTypes = ['join_success', 'create_success', 'room_created', 'joined_room']; // Add all relevant success types
+        const successTypes = ['join_success', 'create_success', 'room_created', 'joined_room', 'join_room_ok']; // Add all relevant success types
 
         if (successTypes.includes(data.type)) {
           if (data.user && data.room) {

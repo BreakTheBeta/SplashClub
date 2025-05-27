@@ -1,7 +1,11 @@
-.PHONY: server, clients, test, kill
+.PHONY: server client client_old test kill
 
-clients:
+client_old:
+	nvm use 23
 	cd http/app && yarn start
+
+client:
+	cd client && yarn serve
 
 server:
 	python3 main.py

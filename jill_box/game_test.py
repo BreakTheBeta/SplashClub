@@ -65,7 +65,7 @@ class TestRoom(Room):
         if user is None:
             return random.sample(list(self.answers.values()), len(self.answers))
         else:
-            return [ self.answers[p] for p in self.vote_orders[user] ]
+            return [ {'id': p, 'text': self.answers[p]} for p in self.vote_orders[user] ]
     
     def __start_voting(self):
         self.state = TestRoom.State.VOTING
@@ -76,17 +76,16 @@ class TestRoom(Room):
 
     def __show_results(self):
         self.state = TestRoom.State.SHOWING_RESULTS
-        new_scores = self.__votes_to_score()
-        for name, score in new_scores.items():
-            self.scores[name] += score
+        for name in self.votes.items():
+            if name in self.players:
+                self.scores[name] += 1
 
     def __votes_to_score(self):
         scores = { u:0 for u in self.players }
-        for player, vote in self.votes.items():
-            if vote in scores:
-                scores[vote] += 1
-            else:
-                scores[player] += 1
+        self.__show_results()
+        for name in self.votes.items():
+            if name in self.players:
+                self.scores[name] += 1
         return scores
 
     def __next_round(self):
@@ -108,8 +107,9 @@ class TestRoom(Room):
                 if len(self.answers) == len(self.players):
                     self.__start_voting()
             elif self.state == TestRoom.State.VOTING:
-                vote = int(data['vote'])
-                self.votes[player] = self.vote_orders[player][vote]
+                # vote = int(data['vote'])
+                vote = str(data['voted_for_answer_id'])
+                self.votes[player] = vote
                 if len(self.votes) == len(self.players):
                     self.__show_results()
             elif self.state == TestRoom.State.SHOWING_RESULTS:
@@ -131,7 +131,9 @@ class TestRoom(Room):
             answers = json.dumps({'prompt': self.prompts[self.round][0], 'answers': self.get_anwers(player)})
             return (InteractReturnCodes.SUCCESS, self.state, answers)
         elif self.state == TestRoom.State.SHOWING_RESULTS:
-            ret = json.dumps({'answer': self.prompts[self.round][1],'earned': self.__votes_to_score(), 'total': self.scores})
+            print("PRINTING OUT RESULTS")
+            # ret = json.dumps({'answer': self.prompts[self.round][1],'earned': self.__votes_to_score(), 'total': self.scores})
+            ret = json.dumps([{"user": i, "score": self.scores[i]} for i in self.scores])
             return (InteractReturnCodes.SUCCESS, self.state, ret)
         return (InteractReturnCodes.WRONG_STATE, self.state, '')
 

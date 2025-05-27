@@ -81,7 +81,8 @@ const App: React.FC = () => {
             setCurPage={setCurPage}
             user={curPage.user || "user empty"}
             room={curPage.room || "room empty"}
-            answers={curPage.answers || {"prompt": "empty prompt", 'answers': ["EMPTY ANSWERS"]}}
+            answers={curPage.answers || [{'id': 'NO ID', 'text':"EMPTY ANSWERS"}]}
+            prompt={curPage.prompt || "prompt empty"}
         >
         </Vote>
       case "results": // Assuming "prompt" is a distinct page state
