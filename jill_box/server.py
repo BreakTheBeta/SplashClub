@@ -25,8 +25,7 @@ from jill_box.contracts import (
 from jill_box.contracts import parse_incoming_message
 
 
-from jill_box.game import GameGateway, Room, StartReturnCodes, InteractReturnCodes, JoinReturnCodes
-from jill_box.game_test import TestRoom
+from jill_box.game import GameGateway, PromptRoom, StartReturnCodes, InteractReturnCodes, JoinReturnCodes, State
 GATEWAY = GameGateway()
 # GATEWAY = MockGameGateway() # Using the mock for standalone running
 
@@ -166,14 +165,14 @@ async def handle_next_round_logic(room_id: str):
 
     # After advancing, get the new state and send appropriate messages
     _, state_val, _ = GATEWAY.get_room_state(room_id) # We don't need the data payload here
-    current_game_state = TestRoom.State(state_val) if state_val is not None else None # Reconstruct enum from value
+    current_game_state = State(state_val) if state_val is not None else None # Reconstruct enum from value
     
     logging.info(f"Room '{room_id}' advanced: New Gateway state is {current_game_state.name if current_game_state else 'UNKNOWN'}")
 
-    if current_game_state == TestRoom.State.COLLECTING_ANSWERS:
+    if current_game_state == State.COLLECTING_ANSWERS:
         await asyncio.sleep(1) # Small delay, original had 20s
         await handle_ask_prompt_for_room(room_id)
-    elif current_game_state == TestRoom.State.DONE:
+    elif current_game_state == State.DONE:
         done_msg = GameDoneServerMessage() # Default message is in the model
         await broadcast_to_room(room_id, done_msg)
     else:
@@ -195,7 +194,7 @@ async def message_handler(websocket: websockets.ServerConnection):
                 current_user_id: Optional[str] = WEBSOCKET_TO_USER_INFO.get(websocket, {}).get("user_id")
 
                 if isinstance(parsed_message, CreateRoomClientMessage):
-                    room_id = GATEWAY.new_game(TestRoom) # TestRoom is a placeholder type
+                    room_id = GATEWAY.new_game(PromptRoom) # TestRoom is a placeholder type
                     user_id = parsed_message.user
                     
                     ret_join = GATEWAY.join_room(room_id, user_id)
@@ -246,12 +245,12 @@ async def message_handler(websocket: websockets.ServerConnection):
                             ret_submit = GATEWAY.submit_data(current_room_id, current_user_id, parsed_message.model_dump())
                             if ret_submit == InteractReturnCodes.SUCCESS:
                                 _, state_val, _ = GATEWAY.get_room_state(current_room_id)
-                                current_game_state = TestRoom.State(state_val) if state_val is not None else None
+                                current_game_state = State(state_val) if state_val is not None else None
                                 logging.info(f"Room '{current_room_id}' state after submit by '{current_user_id}': {current_game_state.name if current_game_state else 'UNKNOWN'}")
 
-                                if isinstance(parsed_message, SubmitAnswerClientMessage) and current_game_state == TestRoom.State.VOTING:
+                                if isinstance(parsed_message, SubmitAnswerClientMessage) and current_game_state == State.VOTING:
                                     await handle_ask_vote_for_room(current_room_id)
-                                elif isinstance(parsed_message, SubmitVoteClientMessage) and current_game_state == TestRoom.State.SHOWING_RESULTS:
+                                elif isinstance(parsed_message, SubmitVoteClientMessage) and current_game_state == State.SHOWING_RESULTS:
                                     await handle_show_results_for_room(current_room_id)
                                     asyncio.create_task(handle_next_round_logic(current_room_id))
                             else:
