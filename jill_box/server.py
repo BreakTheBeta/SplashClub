@@ -22,21 +22,9 @@ from jill_box.contracts import (
     GameDoneServerMessage, AnswerOptionForVote, ResultDetail
 )
 
-# --- Mocks for jill_box (if not installed or for testing) ---
-class MockEnum: # Simplified Enum for mocking
-    def __init__(self, name: str, value: int): self.name = name; self.value = value
-    def __eq__(self, other):
-        if isinstance(other, MockEnum): return self.name == other.name and self.value == other.value
-        if isinstance(other, int): return self.value == other # Allows TestRoom.State(state_value)
-        return False
-    def __hash__(self): return hash((self.name, self.value))
-    def __repr__(self): return f"{self.__class__.__name__}.{self.name}"
+from jill_box.contracts import parse_incoming_message
 
-class JoinReturnCodes: SUCCESS,ROOM_FULL,ROOM_NOT_FOUND = MockEnum("SUCCESS",0),MockEnum("ROOM_FULL",1),MockEnum("ROOM_NOT_FOUND",2)
-class StartReturnCodes: SUCCESS,NOT_ENOUGH_PLAYERS = MockEnum("SUCCESS",0),MockEnum("NOT_ENOUGH_PLAYERS",1)
-class InteractReturnCodes: SUCCESS,INVALID_ACTION = MockEnum("SUCCESS",0),MockEnum("INVALID_ACTION",1)
 
-# --- Use Mocks or Actual jill_box ---
 from jill_box.game import GameGateway, Room, StartReturnCodes, InteractReturnCodes, JoinReturnCodes
 from jill_box.game_test import TestRoom
 GATEWAY = GameGateway()
@@ -50,7 +38,7 @@ USERS: Dict[str, Dict[str, websockets.ServerConnection]] = defaultdict(dict)
 WEBSOCKET_TO_USER_INFO: Dict[websockets.ServerConnection, Dict[str, str]] = {}
 
 
-async def send_typed_error_message(websocket: websockets.ServerConnection, error_code_enum_member: MockEnum, request_id: Optional[str] = None):
+async def send_typed_error_message(websocket: websockets.ServerConnection, error_code_enum_member, request_id: Optional[str] = None):
     """Sends a Pydantic ErrorServerMessage using the enum member's name."""
     error_msg = ErrorServerMessage(message=error_code_enum_member.name, response_to_request_id=request_id)
     try:
@@ -198,19 +186,15 @@ async def message_handler(websocket: websockets.ServerConnection):
         async for message_str in websocket:
             request_id_for_response: Optional[str] = None
             try:
-                
-                data = json.loads(message_str)
-                parsed_message: IncomingMessage = TypeAdapter(
-                    IncomingMessage,
-                ).validate_json(message_str)
                 # parsed_message: IncomingMessage = IncomingMessage.model_validate_json(data)
+                parsed_message = parse_incoming_message(str(message_str))
                 request_id_for_response = parsed_message.request_id
                 logging.info(f"Received '{parsed_message.type}' from {websocket.remote_address}")
 
                 current_room_id: Optional[str] = WEBSOCKET_TO_USER_INFO.get(websocket, {}).get("room_id")
                 current_user_id: Optional[str] = WEBSOCKET_TO_USER_INFO.get(websocket, {}).get("user_id")
 
-                if parsed_message.type == "create_room":
+                if isinstance(parsed_message, CreateRoomClientMessage):
                     room_id = GATEWAY.new_game(TestRoom) # TestRoom is a placeholder type
                     user_id = parsed_message.user
                     
@@ -224,7 +208,7 @@ async def message_handler(websocket: websockets.ServerConnection):
                     else:
                         await send_typed_error_message(websocket, ret_join, request_id_for_response)
 
-                elif parsed_message.type == "join_room":
+                elif isinstance(parsed_message, JoinRoomClientMessage):
                     room_id = parsed_message.room
                     user_id = parsed_message.user
                     ret_join = GATEWAY.join_room(room_id, user_id)
@@ -244,7 +228,7 @@ async def message_handler(websocket: websockets.ServerConnection):
                 
                 # For actions requiring user to be in a room and authenticated:
                 elif current_room_id and current_user_id:
-                    if parsed_message.type == "start_room":
+                    if isinstance(parsed_message, StartRoomClientMessage):
                         if parsed_message.room == current_room_id: # Ensure action is for their current room
                             ret_start = GATEWAY.room_start(current_room_id)
                             if ret_start == StartReturnCodes.SUCCESS:
@@ -253,10 +237,10 @@ async def message_handler(websocket: websockets.ServerConnection):
                                 await send_typed_error_message(websocket, ret_start, request_id_for_response)
                         else: # Security: User tried to start a room they are not in.
                             logging.warning(f"User '{current_user_id}' tried to start room '{parsed_message.room}' but is in '{current_room_id}'.")
-                            await send_typed_error_message(websocket, InteractReturnCodes.INVALID_ACTION, request_id_for_response)
+                            await send_typed_error_message(websocket, InteractReturnCodes.INVALID_DATA, request_id_for_response)
 
 
-                    elif parsed_message.type == "submit_answer" or parsed_message.type == "submit_vote":
+                    elif isinstance(parsed_message, SubmitAnswerClientMessage) or isinstance(parsed_message, SubmitVoteClientMessage):
                         # Ensure message's room and user match connection's context
                         if parsed_message.room == current_room_id and parsed_message.user == current_user_id:
                             ret_submit = GATEWAY.submit_data(current_room_id, current_user_id, parsed_message.model_dump())
@@ -265,16 +249,16 @@ async def message_handler(websocket: websockets.ServerConnection):
                                 current_game_state = TestRoom.State(state_val) if state_val is not None else None
                                 logging.info(f"Room '{current_room_id}' state after submit by '{current_user_id}': {current_game_state.name if current_game_state else 'UNKNOWN'}")
 
-                                if parsed_message.type == "submit_answer" and current_game_state == TestRoom.State.VOTING:
+                                if isinstance(parsed_message, SubmitAnswerClientMessage) and current_game_state == TestRoom.State.VOTING:
                                     await handle_ask_vote_for_room(current_room_id)
-                                elif parsed_message.type == "submit_vote" and current_game_state == TestRoom.State.SHOWING_RESULTS:
+                                elif isinstance(parsed_message, SubmitVoteClientMessage) and current_game_state == TestRoom.State.SHOWING_RESULTS:
                                     await handle_show_results_for_room(current_room_id)
                                     asyncio.create_task(handle_next_round_logic(current_room_id))
                             else:
                                 await send_typed_error_message(websocket, ret_submit, request_id_for_response)
                         else:
                             logging.warning(f"Mismatch in submit: msg_room='{parsed_message.room}', msg_user='{parsed_message.user}' vs ws_room='{current_room_id}', ws_user='{current_user_id}'.")
-                            await send_typed_error_message(websocket, InteractReturnCodes.INVALID_ACTION, request_id_for_response)
+                            await send_typed_error_message(websocket, InteractReturnCodes.INVALID_DATA, request_id_for_response)
                 else: # Client sent a message type that requires being in a room, but they are not.
                     if parsed_message.type not in ["create_room", "join_room"]:
                          logging.warning(f"User {websocket.remote_address} sent '{parsed_message.type}' but is not registered in a room.")

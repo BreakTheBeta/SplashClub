@@ -46,7 +46,7 @@ class TestRoom(Room):
         self.answers: Dict[str, str] = {}
         self.votes: Dict[str, str] = {}
         self.vote_orders: Dict[str, List[str]] = {}
-        self.scores: Dict[str, int] = defaultdict(int)
+        self.scores: Dict[Tuple[str, str], int] = defaultdict(int)
         self.confirmed: Dict[str, bool] = {}
 
     def start(self) -> StartReturnCodes:
@@ -61,11 +61,8 @@ class TestRoom(Room):
     def get_prompt(self) -> str:
         return self.prompts[self.round][0]
 
-    def get_anwers(self, user) -> List[str]:
-        if user is None:
-            return random.sample(list(self.answers.values()), len(self.answers))
-        else:
-            return [ {'id': p, 'text': self.answers[p]} for p in self.vote_orders[user] ]
+    def get_anwers(self, user) -> list[dict[str, str]]:
+        return [ {'id': p, 'text': self.answers[p]} for p in self.vote_orders[user] ]
     
     def __start_voting(self):
         self.state = TestRoom.State.VOTING
@@ -92,10 +89,10 @@ class TestRoom(Room):
         self.round += 1
         if self.round < TestRoom.ROUNDS:
             self.state = TestRoom.State.COLLECTING_ANSWERS
-            self.answers: Dict[str, str] = {}
-            self.votes: Dict[str, str] = {}
-            self.vote_orders: Dict[str, List[str]] = {}
-            self.confirmed: Dict[str, bool] = {}
+            self.answers = {}
+            self.votes = {}
+            self.vote_orders = {}
+            self.confirmed = {}
         else:
             self.state = TestRoom.State.DONE
 
@@ -124,18 +121,18 @@ class TestRoom(Room):
 
     def get_room_state(self, player) -> Tuple[InteractReturnCodes, str, str]:
         if self.round == TestRoom.ROUNDS:
-            return (InteractReturnCodes.SUCCESS, self.state, '')
+            return (InteractReturnCodes.SUCCESS, str(self.state), '')
         elif self.state == TestRoom.State.COLLECTING_ANSWERS:
-            return (InteractReturnCodes.SUCCESS, self.state, self.get_prompt())
+            return (InteractReturnCodes.SUCCESS, str(self.state), self.get_prompt())
         elif self.state == TestRoom.State.VOTING:
             answers = json.dumps({'prompt': self.prompts[self.round][0], 'answers': self.get_anwers(player)})
-            return (InteractReturnCodes.SUCCESS, self.state, answers)
+            return (InteractReturnCodes.SUCCESS, str(self.state), answers)
         elif self.state == TestRoom.State.SHOWING_RESULTS:
             print("PRINTING OUT RESULTS")
             # ret = json.dumps({'answer': self.prompts[self.round][1],'earned': self.__votes_to_score(), 'total': self.scores})
             ret = json.dumps([{"user": i, "score": self.scores[i]} for i in self.scores])
-            return (InteractReturnCodes.SUCCESS, self.state, ret)
-        return (InteractReturnCodes.WRONG_STATE, self.state, '')
+            return (InteractReturnCodes.SUCCESS, str(self.state), ret)
+        return (InteractReturnCodes.WRONG_STATE, str(self.state), '')
 
 def main():
     gateway = GameGateway()

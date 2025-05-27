@@ -109,39 +109,109 @@ OutgoingMessage = Union[
     GameDoneServerMessage,
 ]
 
+# --- HELPERS ----
+
+def parse_incoming_message(json_str: str) -> IncomingMessage:
+    """Parse incoming JSON message into appropriate Pydantic model."""
+    adapter = TypeAdapter(IncomingMessage)
+    return adapter.validate_json(json_str)
+
+def parse_outgoing_message(json_str: str) -> OutgoingMessage:
+    """Parse outgoing JSON message into appropriate Pydantic model."""
+    adapter = TypeAdapter(OutgoingMessage)
+    return adapter.validate_json(json_str)
+
+
 # --- Schema Generation Function ---
 def generate_json_schemas(output_dir: str = "schemas_pydantic"):
     """Generates JSON schemas for Incoming and Outgoing messages."""
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    # Pydantic v2 uses model_json_schema()
-    # For discriminated unions, generating schema for the Union itself is best.
     try:
-        incoming_schema = IncomingMessage.model_json_schema()
+        # Use TypeAdapter for Union schema generation
+        incoming_adapter = TypeAdapter(IncomingMessage)
+        incoming_schema = incoming_adapter.json_schema()
+        
         with open(os.path.join(output_dir, "incoming_messages.json"), "w") as f:
             json.dump(incoming_schema, f, indent=2)
         print(f"Generated schema: {os.path.join(output_dir, 'incoming_messages.json')}")
 
-        outgoing_schema = OutgoingMessage.model_json_schema()
+        outgoing_adapter = TypeAdapter(OutgoingMessage)
+        outgoing_schema = outgoing_adapter.json_schema()
+        
         with open(os.path.join(output_dir, "outgoing_messages.json"), "w") as f:
             json.dump(outgoing_schema, f, indent=2)
         print(f"Generated schema: {os.path.join(output_dir, 'outgoing_messages.json')}")
 
-    except AttributeError:
-        # Fallback for Pydantic v1 (less ideal for discriminated unions in schema)
-        print("Warning: Using Pydantic v1 style schema generation (less complete for Unions).")
-        for model_name, model_type in {"IncomingMessage": IncomingMessage, "OutgoingMessage": OutgoingMessage}.items():
-            # Pydantic v1 doesn't have a direct .model_json_schema() for Unions.
-            # This will generate for the first type in the Union, or you'd do it for each member.
-            # For Pydantic v1, it's often better to generate schema for each individual message type.
-            # schema = model_type.schema() # This would be for a single model
-            # For simplicity, we'll skip complex v1 union schema generation here.
-            # You would typically generate schemas for each member of the Union.
-            print(f"Manual schema generation required for {model_name} members with Pydantic v1.")
+    except Exception as e:
+        print(f"Error generating schemas: {e}")
+        
+        # Fallback: Generate schemas for individual message types
+        print("Falling back to individual message type schemas...")
+        
+        # Client message schemas
+        client_messages = [
+            ("CreateRoomClientMessage", CreateRoomClientMessage),
+            ("JoinRoomClientMessage", JoinRoomClientMessage),
+            ("StartRoomClientMessage", StartRoomClientMessage),
+            ("SubmitAnswerClientMessage", SubmitAnswerClientMessage),
+            ("SubmitVoteClientMessage", SubmitVoteClientMessage),
+        ]
+        
+        # Server message schemas
+        server_messages = [
+            ("ErrorServerMessage", ErrorServerMessage),
+            ("JoinRoomSuccessServerMessage", JoinRoomSuccessServerMessage),
+            ("UserUpdateServerMessage", UserUpdateServerMessage),
+            ("AskPromptServerMessage", AskPromptServerMessage),
+            ("AskVoteServerMessage", AskVoteServerMessage),
+            ("ShowResultsServerMessage", ShowResultsServerMessage),
+            ("GameDoneServerMessage", GameDoneServerMessage),
+        ]
+        
+        # Generate individual schemas
+        for name, model_class in client_messages + server_messages:
+            try:
+                schema = model_class.model_json_schema()
+                with open(os.path.join(output_dir, f"{name}.json"), "w") as f:
+                    json.dump(schema, f, indent=2)
+                print(f"Generated schema: {os.path.join(output_dir, f'{name}.json')}")
+            except Exception as model_error:
+                print(f"Failed to generate schema for {name}: {model_error}")
 
+# --- Usage Examples ---
+def example_usage():
+    """Examples of how to use the message contracts."""
+    
+    # Example: Creating a client message
+    create_room_msg = CreateRoomClientMessage(
+        user="player1",
+        request_id="req_123"
+    )
+    json_str = create_room_msg.model_dump_json()
+    print(f"Serialized message: {json_str}")
+    
+    # Example: Parsing incoming JSON
+    try:
+        parsed = parse_incoming_message(json_str)
+        print(f"Parsed message type: {parsed.type}")
+        print(f"Message content: {parsed}")
+    except Exception as e:
+        print(f"Failed to parse message: {e}")
+    
+    # Example: Creating a server response
+    success_response = JoinRoomSuccessServerMessage(
+        room="room_456",
+        user="player1",
+        response_to_request_id="req_123"
+    )
+    print(f"Server response: {success_response.model_dump_json()}")
 
 if __name__ == "__main__":
     print("Generating JSON schemas for WebSocket contracts...")
     generate_json_schemas()
     print("Schema generation complete.")
+    
+    print("\nRunning usage examples...")
+    example_usage()
