@@ -14,25 +14,30 @@ interface ResultsData {
   total: { [key: string]: number };
 }
 
+interface NewResultsData {
+  user: string;
+  score: number;
+}
+
 // Props for the Results component
 interface ResultsProps {
   setCurPage: React.Dispatch<React.SetStateAction<PageState>>;
   user: string;
   room: string;
-  results: ResultsData | null | undefined; // Allow results to be null or undefined
+  results: NewResultsData[] | null | undefined; // Allow results to be null or undefined
 }
 
 // Specific message data structure this component expects
 interface ResultsPageMessageData extends SharedWsMessageData {
   type: 'show_results' | 'game_done' | 'next_prompt_available' | 'error' | string;
-  results?: ResultsData; // Expected with 'show_results'
+  results?: NewResultsData[]; // Expected with 'show_results'
   prompt?: string;       // Expected with 'next_prompt_available'
   msg?: string;          // Expected with 'error'
   room?: string;         // Optional room identifier from server
 }
 
 const Results: React.FC<ResultsProps> = (props) => {
-  const [currentResults, setCurrentResults] = useState<ResultsData | null>(null);
+  const [currentResults, setCurrentResults] = useState<NewResultsData[] | null>(null);
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
@@ -45,13 +50,7 @@ const Results: React.FC<ResultsProps> = (props) => {
   // Effect to handle results passed via props
   useEffect(() => {
     if (props.results) {
-      // Process and set results from props
-      const processedResults = {
-        ...props.results,
-        answer: props.results.answer.trim(),
-      };
-      console.log("Results: Setting/updating results from props:", processedResults);
-      setCurrentResults(processedResults);
+      setCurrentResults(props.results);
       // When new results are shown (either from props or WS),
       // it implies a round's results, so reset gameOver.
       // The 'game_done' message will explicitly set it to true if the game has ended.
@@ -85,14 +84,9 @@ const Results: React.FC<ResultsProps> = (props) => {
             });
         } else if (data.type === 'show_results') {
           if (data.results) {
-            const processedResults = {
-              ...data.results,
-              answer: data.results.answer.trim(),
-            };
             console.log("Results: WE GOT THE RESULTS from WebSocket");
-            console.log(processedResults);
-            setCurrentResults(processedResults);
-            setGameOver(false); // New results shown, so not game over for this specific set.
+            setCurrentResults(data.results);
+            setGameOver(false); 
           } else {
             console.error("Results: 'show_results' message missing results data.", data);
             setError("Failed to load results from server.");
@@ -135,16 +129,8 @@ const Results: React.FC<ResultsProps> = (props) => {
     setError(""); // Optionally clear the error message as well
   };
 
-  const winner = currentResults
-    ? Object.keys(currentResults.total).reduce((a, b) =>
-        currentResults.total[a] > currentResults.total[b] ? a : b
-      )
-    : null;
-
-  // Handle loading and error states
   if (!currentResults) {
     if (showError) {
-      // Error occurred and no results are available to display
       return (
         <div className={`container mx-auto px-4 py-8 ${theme.background.page} text-center`}>
           <h2 className={`text-xl font-semibold text-red-500 mb-4`}>
@@ -173,37 +159,37 @@ const Results: React.FC<ResultsProps> = (props) => {
       <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} max-w-lg mx-auto`}>
         <h2 className={`text-2xl font-bold mb-6 text-center ${theme.text.primary}`}>Results</h2>
 
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <h3 className={`text-xl font-semibold mb-2 ${theme.text.primary}`}>The correct answer was:</h3>
           <div className={`p-3 ${theme.background.highlight || 'bg-gray-100'} rounded-md text-center font-medium ${theme.text.secondary}`}>
             {currentResults.answer}
           </div>
-        </div>
+        </div> */}
 
-        {gameOver && winner && (
+        {/* {gameOver && winner && (
           <div className="mb-6">
             <h3 className={`text-2xl font-semibold text-center ${theme.text.accent || 'text-green-500'}`}>
               Player {winner} wins the game!
             </h3>
           </div>
-        )}
+        )} */}
 
         <div className="mb-6">
           <h3 className={`text-lg font-semibold mb-2 ${theme.text.primary}`}>Earned This Round</h3>
           <ul className={`${theme.border} border rounded-md divide-y ${theme.success || 'divide-gray-200'} ${theme.background.card}`}>
-            {Object.keys(currentResults.earned).map((key) => (
+            {currentResults.map((key) => (
               <li
                 key={`earned-${key}`}
                 className={`px-4 py-2 flex justify-between items-center ${theme.text.primary}`}
               >
-                <span>{key}</span>
-                <span className="font-medium">{currentResults.earned[key]} points</span>
+                <span>{key.user}</span>
+                <span className="font-medium">{key.score} points</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <h3 className={`text-lg font-semibold mb-2 ${theme.text.primary}`}>Total Scores</h3>
           <ul className={`${theme.border} border rounded-md divide-y ${theme.success || 'divide-gray-200'} ${theme.background.card}`}>
             {Object.keys(currentResults.total).map((key) => (
@@ -218,7 +204,7 @@ const Results: React.FC<ResultsProps> = (props) => {
               </li>
             ))}
           </ul>
-        </div>
+        </div> */}
 
         {!gameOver && (
           <div className="text-center text-sm mt-4">
