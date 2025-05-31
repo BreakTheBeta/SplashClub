@@ -108,6 +108,11 @@ const GameApp: React.FC = () => {
               setPageWithRouting({ page: 'waiting', user: data.user, room: data.room });
             }
             break;
+          case 'error':
+            console.log('Got error');
+            setIsReconnecting(false);
+            navigate('/');
+            break;
           case 'room_not_found':
             console.log('Room rejoin failed, redirecting to home');
             setIsReconnecting(false);
