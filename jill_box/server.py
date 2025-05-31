@@ -126,12 +126,11 @@ async def handle_ask_vote_for_room(room_id: str):
     active_connections = list(USERS[room_id].items())
     tasks = []
     for user_id, ws in active_connections:
-        _, _, answers_json = GATEWAY.get_room_state(room_id, user_id) # Pass user_id for filtering
+        gameState = GATEWAY.get_room_state(room_id, user_id) # Pass user_id for filtering
+        gameData = gameState[2]
         try:
-            answers_list_of_dicts = json.loads(answers_json)
-            print(answers_list_of_dicts)
-            valid_answers = [AnswerOptionForVote(**ans) for ans in answers_list_of_dicts['answers']]
-            vote_msg = AskVoteServerMessage(prompt=answers_list_of_dicts['prompt'], answers=valid_answers)
+            valid_answers = [AnswerOptionForVote(**ans) for ans in gameData['answers']]
+            vote_msg = AskVoteServerMessage(prompt=gameData['prompt'], answers=valid_answers)
             # Send individually as content might be user-specific
             tasks.append(safe_websocket_send(ws, vote_msg.model_dump_json()))
         except (json.JSONDecodeError, ValidationError) as e:
@@ -142,15 +141,15 @@ async def handle_ask_vote_for_room(room_id: str):
 
 
 async def handle_show_results_for_room(room_id: str):
-    _, _, results_json = GATEWAY.get_room_state(room_id)
+    gameState = GATEWAY.get_room_state(room_id)
+    gameData = gameState[2]
     try:
-        results_list_of_dicts = json.loads(results_json)
-        print(results_list_of_dicts)
-        valid_results = [ResultDetail(**res) for res in results_list_of_dicts]
+        print(gameData)
+        valid_results = [ResultDetail(**res) for res in gameData]
         results_msg = ShowResultsServerMessage(results=valid_results)
         await broadcast_to_room(room_id, results_msg)
     except (json.JSONDecodeError, ValidationError) as e:
-        logging.error(f"Error preparing results message for room '{room_id}' with json ---\n{results_list_of_dicts}\n---: {e}")
+        logging.error(f"Error preparing results message for room '{room_id}' with json ---\n{gameData}\n---: {e}")
 
 async def handle_next_round_logic(room_id: str):
     """Server-initiated logic to advance the game round or end the game."""
@@ -164,8 +163,8 @@ async def handle_next_round_logic(room_id: str):
     GATEWAY.submit_data(room_id, first_user_id_in_room, {})
 
     # After advancing, get the new state and send appropriate messages
-    _, state_val, _ = GATEWAY.get_room_state(room_id) # We don't need the data payload here
-    current_game_state = State(state_val) if state_val is not None else None # Reconstruct enum from value
+    state_val  = GATEWAY.get_room_state(room_id) # We don't need the data payload here
+    current_game_state = State(state_val[1]) if state_val is not None else None # Reconstruct enum from value
     
     logging.info(f"Room '{room_id}' advanced: New Gateway state is {current_game_state.name if current_game_state else 'UNKNOWN'}")
 
@@ -263,7 +262,6 @@ async def message_handler(websocket: websockets.ServerConnection):
                          logging.warning(f"User {websocket.remote_address} sent '{parsed_message.type}' but is not registered in a room.")
                          error_msg = ErrorServerMessage(message="Action requires being in a room. Please join or create a room.", response_to_request_id=request_id_for_response)
                          await safe_websocket_send(websocket, error_msg.model_dump_json())
-
 
             except ValidationError as e:
                 logging.error(f"Pydantic Validation Error from {websocket.remote_address}: {e.errors()}")
