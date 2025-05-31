@@ -38,3 +38,12 @@ This demo game example is something like Fibbage. The state machine proceeds as 
  * Look into reimplementing the Python in Rust to get some experience in that language.
  * Protobufs might be helpful to specify the message schema between server/client
  * Remove the state from the server and put it in a key/value store or DB
+
+
+## Generating Types
+
+Install this: 
+```bash
+npm i -g json-schema-to-typescript
+```
+
