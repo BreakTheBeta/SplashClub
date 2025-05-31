@@ -6,6 +6,7 @@ import string
 from enum import Enum, auto
 from abc import ABC, abstractmethod 
 import json
+import time 
 
 from jill_box.contracts import (
     IncomingMessage, OutgoingMessage, # Base Union types
@@ -227,9 +228,8 @@ class PromptRoom(Room):
                 if len(self.votes) == len(self.players):
                     self.__show_results()
             elif self.state == State.SHOWING_RESULTS:
-                self.confirmed[player] = True
-                if len(self.confirmed) == len(self.players):
-                    self.__next_round()
+                time.sleep(2)
+                self.__next_round()
             else:
                 return InteractReturnCodes.WRONG_STATE
             return InteractReturnCodes.SUCCESS

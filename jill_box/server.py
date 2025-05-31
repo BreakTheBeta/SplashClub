@@ -251,6 +251,7 @@ async def message_handler(websocket: websockets.ServerConnection):
                                     await handle_ask_vote_for_room(current_room_id)
                                 elif isinstance(parsed_message, SubmitVoteClientMessage) and current_game_state == State.SHOWING_RESULTS:
                                     await handle_show_results_for_room(current_room_id)
+                                    logging.info(f"going to the next round for {current_room_id}")
                                     asyncio.create_task(handle_next_round_logic(current_room_id))
                             else:
                                 await send_typed_error_message(websocket, ret_submit, request_id_for_response)
