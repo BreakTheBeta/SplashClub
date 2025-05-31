@@ -31,17 +31,13 @@ const App: React.FC = () => {
     if (lastMessage !== null) {
       try {
         const data: WsMessageData = JSON.parse(lastMessage.data as string);
-        console.log('App received message:', data);
 
         switch (data.type) {
-          case 'join_room': // Assuming server sends this after successful room join
+          case 'join_room_ok': // Assuming server sends this after successful room join
             if (data.user && data.room) {
               setCurPage({ page: 'waiting', user: data.user, room: data.room });
             }
             break;
-          // Add other global message handlers here if needed, e.g., for game end, etc.
-          // Note: Messages specific to 'Waiting' (like user_update, or direct prompt start)
-          // will be handled in the Waiting component itself if it receives lastMessage.
         }
       } catch (e) {
         console.error("Failed to parse WebSocket message in App:", e, lastMessage.data);

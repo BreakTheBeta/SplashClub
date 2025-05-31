@@ -5,39 +5,21 @@ import { useTheme } from '../theme/ThemeContext';
 import Toast from "../components/Toast";
 import useWebSocket from "react-use-websocket";
 import { WS_URL } from "../const";
-import type { PageState, WsMessageData as SharedWsMessageData } from "../types";
+import type { PageState, WsMessageData } from "../types";
+import type { ResultDetail } from "../generated/sockets_types";
 
-// Define the structure of the results data
-interface ResultsData {
-  answer: string;
-  earned: { [key: string]: number };
-  total: { [key: string]: number };
-}
-
-interface NewResultsData {
-  user: string;
-  score: number;
-}
 
 // Props for the Results component
 interface ResultsProps {
   setCurPage: React.Dispatch<React.SetStateAction<PageState>>;
   user: string;
   room: string;
-  results: NewResultsData[] | null | undefined; // Allow results to be null or undefined
+  results: ResultDetail[] | null | undefined; // Allow results to be null or undefined
 }
 
 // Specific message data structure this component expects
-interface ResultsPageMessageData extends SharedWsMessageData {
-  type: 'show_results' | 'game_done' | 'next_prompt_available' | 'error' | string;
-  results?: NewResultsData[]; // Expected with 'show_results'
-  prompt?: string;       // Expected with 'next_prompt_available'
-  msg?: string;          // Expected with 'error'
-  room?: string;         // Optional room identifier from server
-}
-
 const Results: React.FC<ResultsProps> = (props) => {
-  const [currentResults, setCurrentResults] = useState<NewResultsData[] | null>(null);
+  const [currentResults, setCurrentResults] = useState<ResultDetail[] | null>(null);
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
@@ -64,16 +46,16 @@ const Results: React.FC<ResultsProps> = (props) => {
   useEffect(() => {
     if (lastMessage !== null) {
       try {
-        const data: ResultsPageMessageData = JSON.parse(lastMessage.data as string);
+        const data: WsMessageData = JSON.parse(lastMessage.data as string);
         // console.log('Results: Received WebSocket message:', data);
 
-        if (data.room && data.room !== props.room) {
+        if (props.room && props.room !== props.room) {
           // console.log(`Results: Message for room ${data.room}, current room ${props.room}. Ignoring.`);
           return;
         }
 
         if (data.type === "error") {
-          setError(data.msg || "An unexpected error occurred from the server.");
+          setError(data.message || "An unexpected error occurred from the server.");
           setShowError(true);
         } else if (data.type === "ask_prompt") {
             props.setCurPage({
@@ -95,19 +77,6 @@ const Results: React.FC<ResultsProps> = (props) => {
         } else if (data.type === 'game_done') {
           console.log("Results: Game done message received.");
           setGameOver(true);
-        } else if (data.type === 'next_prompt_available') {
-          if (data.prompt) {
-            props.setCurPage({
-              page: "prompt",
-              user: props.user,
-              room: props.room,
-              prompt: data.prompt,
-            });
-          } else {
-            console.error("Results: 'next_prompt_available' message missing prompt.", data);
-            setError("Failed to get next prompt from server.");
-            setShowError(true);
-          }
         }
         // else {
         //   console.warn("Results: Unhandled message type:", data.type);
