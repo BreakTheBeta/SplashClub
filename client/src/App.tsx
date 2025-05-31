@@ -13,24 +13,72 @@ import ThemeSwitcher from './components/ThemeSwitcher';
 import { ThemeProvider } from './theme/ThemeContext';
 import type { PageState, WsMessageData } from './types';
 import { WS_URL } from './const';
+import type { ReJoinRoomClientMessage } from './generated/sockets_types';
 
 // Create a separate component for the main game logic
 const GameApp: React.FC = () => {
   const [curPage, setCurPage] = useState<PageState>({ page: "login" });
   const [theme, setTheme] = useState<ThemeColors>(defaultTheme);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
 
-  const { lastMessage, readyState } = useWebSocket(WS_URL, {
+  const { lastMessage, readyState, sendMessage } = useWebSocket(WS_URL, {
     share: true,
-    onOpen: () => console.log('WebSocket connection established.'),
-    onClose: () => console.log('WebSocket connection closed.'),
-    shouldReconnect: (closeEvent) => true,
+    onOpen: () => {
+      console.log('WebSocket connection established.');
+      setReconnectAttempts(0);
+      setIsReconnecting(false);
+      
+      // If we're on a room URL but not in a room state, try to rejoin
+      if (roomId && curPage.page === 'login') {
+        attemptRoomRejoin(roomId);
+      }
+    },
+    onClose: () => {
+      console.log('WebSocket connection closed.');
+      if (roomId && reconnectAttempts < 3) {
+        setIsReconnecting(true);
+        setReconnectAttempts(prev => prev + 1);
+      }
+    },
+    shouldReconnect: (closeEvent) => {
+      // Only try to reconnect if we're in a room and haven't exceeded max attempts
+      return roomId && reconnectAttempts < 3;
+    },
+    reconnectAttempts: 3,
+    reconnectInterval: 2000,
   });
+
+  // Function to attempt rejoining a room after reconnection
+  const attemptRoomRejoin = (roomId: string) => {
+    if (sendMessage && readyState === ReadyState.OPEN) {
+      setIsReconnecting(true);
+      // Send a rejoin message to the server
+      let message: ReJoinRoomClientMessage = {
+        type: "rejoin_room",
+        room: roomId,
+        user: "test",
+      }
+
+      sendMessage(JSON.stringify(message));
+      
+      // Set a timeout to redirect if rejoin fails
+      setTimeout(() => {
+        if (curPage.page === 'login' && isReconnecting) {
+          console.log('Room rejoin failed, redirecting to home');
+          setIsReconnecting(false);
+          navigate('/');
+        }
+      }, 5000); // Give 5 seconds for the server to respond
+    }
+  };
 
   // Enhanced page setter that handles routing
   const setPageWithRouting = (newPage: PageState) => {
     setCurPage(newPage);
+    setIsReconnecting(false); // Clear reconnecting state when page changes
     
     // Navigate to appropriate route based on page state
     if (newPage.page === 'waiting' || newPage.page === 'prompt' || 
@@ -51,9 +99,15 @@ const GameApp: React.FC = () => {
 
         switch (data.type) {
           case 'join_room_ok':
+          case 'rejoin_room_ok':
             if (data.user && data.room) {
               setPageWithRouting({ page: 'waiting', user: data.user, room: data.room });
             }
+            break;
+          case 'room_not_found':
+            console.log('Room rejoin failed, redirecting to home');
+            setIsReconnecting(false);
+            navigate('/');
             break;
           // Add other message handlers as needed
         }
@@ -63,17 +117,40 @@ const GameApp: React.FC = () => {
     }
   }, [lastMessage]);
 
+  // Handle connection state changes and failed reconnections
+  useEffect(() => {
+    if (readyState === ReadyState.CLOSED && roomId && reconnectAttempts >= 3) {
+      console.log('Max reconnection attempts reached, redirecting to home');
+      setIsReconnecting(false);
+      navigate('/');
+    }
+  }, [readyState, reconnectAttempts, roomId, navigate]);
+
   // Handle URL changes - if user navigates directly to a room URL
   useEffect(() => {
-    if (roomId && curPage.page === 'login') {
-      // If user navigates directly to a room URL but isn't logged in,
-      // you might want to redirect to login or handle this case
+    if (roomId && curPage.page === 'login' && readyState === ReadyState.OPEN && !isReconnecting) {
+      // If user navigates directly to a room URL, try to join/rejoin
       console.log('User navigated directly to room:', roomId);
+      attemptRoomRejoin(roomId);
     }
-  }, [roomId, curPage.page]);
+  }, [roomId, curPage.page, readyState, isReconnecting]);
 
   const renderPage = () => {
     console.log("Current: ", curPage);
+    
+    // Show reconnecting state if we're trying to reconnect to a room
+    if (isReconnecting && roomId) {
+      return (
+        <div className="text-center">
+          <h2 className="text-xl mb-4">Reconnecting to room {roomId}...</h2>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current mx-auto"></div>
+          <p className="mt-4 text-sm opacity-75">
+            Attempt {reconnectAttempts} of 3
+          </p>
+        </div>
+      );
+    }
+    
     switch (curPage.page) {
       case "login":
         return <Login setCurPage={setPageWithRouting} />;

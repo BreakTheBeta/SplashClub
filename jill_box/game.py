@@ -88,6 +88,11 @@ class Room(ABC):
             return False
         self.players[name] = Player()
         return True
+
+    def rejoin_player(self, name: str) -> bool:
+        if name in self.players.keys():
+            return True
+        return False
     
     @abstractmethod
     def start(self) -> StartReturnCodes:
@@ -117,6 +122,18 @@ class GameGateway:
         room = _random_id()
         self.rooms[room] = room_class()
         return room
+
+    def rejoin_room(self, room: str, name: str) -> JoinReturnCodes:
+        try:
+            if room not in self.rooms:
+                return JoinReturnCodes.ROOM_NOT_FOUND
+            success = self.rooms[room].rejoin_player(name)
+            if success:
+                return JoinReturnCodes.SUCCESS
+            else:
+                return JoinReturnCodes.NAME_IN_USE
+        except Exception:
+            return JoinReturnCodes.ROOM_NOT_FOUND
 
     def join_room(self, room: str, name: str) -> JoinReturnCodes:
         try:

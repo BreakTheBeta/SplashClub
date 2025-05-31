@@ -1,4 +1,4 @@
-.PHONY: server client client_old test kill
+.PHONY: server client client_old test kill gen_types
 
 client_old:
 	nvm use 23
@@ -16,4 +16,6 @@ kill:
 test:
 	python3 game_test.py
 
+gen_types:
+	pydantic2ts --module ./jill_box/contracts.py --output client/src/generated/sockets_types.ts
 

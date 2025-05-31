@@ -15,11 +15,11 @@ from jill_box.contracts import (
     IncomingMessage, OutgoingMessage, # Base Union types
     # Specific client message types (for isinstance checks or direct construction if needed)
     CreateRoomClientMessage, JoinRoomClientMessage, StartRoomClientMessage,
-    SubmitAnswerClientMessage, SubmitVoteClientMessage,
+    SubmitAnswerClientMessage, SubmitVoteClientMessage, ReJoinRoomClientMessage,
     # Specific server message types (for construction)
     ErrorServerMessage, JoinRoomSuccessServerMessage, UserUpdateServerMessage,
     AskPromptServerMessage, AskVoteServerMessage, ShowResultsServerMessage,
-    GameDoneServerMessage, AnswerOptionForVote, ResultDetail
+    GameDoneServerMessage, AnswerOptionForVote, ResultDetail, ReJoinRoomSuccessServerMessage, RoomNotFoundServerMessage
 )
 
 from jill_box.contracts import parse_incoming_message
@@ -36,6 +36,13 @@ USERS: Dict[str, Dict[str, websockets.ServerConnection]] = defaultdict(dict)
 # Map WebSocket back to user details for quick lookup on disconnect
 WEBSOCKET_TO_USER_INFO: Dict[websockets.ServerConnection, Dict[str, str]] = {}
 
+async def send_room_not_found(websocket: websockets.ServerConnection):
+    """Sends a Pydantic ErrorServerMessage using the enum member's name."""
+    error_msg = RoomNotFoundServerMessage()
+    try:
+        await websocket.send(error_msg.model_dump_json())
+    except websockets.exceptions.ConnectionClosed:
+        logging.warning(f"Failed to send error to a closing connection: {websocket.remote_address}")
 
 async def send_typed_error_message(websocket: websockets.ServerConnection, error_code_enum_member, request_id: Optional[str] = None):
     """Sends a Pydantic ErrorServerMessage using the enum member's name."""
@@ -221,6 +228,25 @@ async def message_handler(websocket: websockets.ServerConnection):
                         # order. Either need to combine the data messages.
                         time.sleep(0.1) 
                         await notify_users_of_room_update(room_id)
+                    else:
+                        await send_typed_error_message(websocket, ret_join, request_id_for_response)
+                elif isinstance(parsed_message, ReJoinRoomClientMessage):
+                    room_id = parsed_message.room
+                    user_id = parsed_message.user
+                    ret_join = GATEWAY.rejoin_room(room_id, user_id)
+                    if ret_join == JoinReturnCodes.SUCCESS:
+                        USERS[room_id][user_id] = websocket
+                        WEBSOCKET_TO_USER_INFO[websocket] = {"room_id": room_id, "user_id": user_id}
+                        join_ok_msg = ReJoinRoomSuccessServerMessage(room=room_id, user=user_id, response_to_request_id=request_id_for_response)
+                        await safe_websocket_send(websocket, join_ok_msg.model_dump_json())
+                        
+                        # gross solution
+                        # Sending the ok join socket and the user update socket need to be delayed so that they get recieved in the correct
+                        # order. Either need to combine the data messages.
+                        time.sleep(0.1) 
+                        await notify_users_of_room_update(room_id)
+                    elif ret_join == JoinReturnCodes.ROOM_NOT_FOUND:
+                        await send_room_not_found(websocket)
                     else:
                         await send_typed_error_message(websocket, ret_join, request_id_for_response)
                 

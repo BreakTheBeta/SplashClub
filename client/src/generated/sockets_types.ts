@@ -95,6 +95,30 @@ export interface JoinRoomSuccessServerMessage {
    */
   user: string;
 }
+export interface ReJoinRoomClientMessage {
+  request_id?: string | null;
+  type?: "rejoin_room";
+  /**
+   * ID of the room to join.
+   */
+  room: string;
+  /**
+   * User ID of the player joining.
+   */
+  user: string;
+}
+export interface ReJoinRoomSuccessServerMessage {
+  response_to_request_id?: string | null;
+  type?: "rejoin_room_ok";
+  /**
+   * ID of the room joined.
+   */
+  room: string;
+  /**
+   * User ID of the player who joined.
+   */
+  user: string;
+}
 export interface ResultDetail {
   /**
    * ID of the answer.
@@ -104,6 +128,10 @@ export interface ResultDetail {
    * Score user has totaled over the game
    */
   score: number;
+}
+export interface RoomNotFoundServerMessage {
+  response_to_request_id?: string | null;
+  type?: "room_not_found";
 }
 export interface ShowResultsServerMessage {
   response_to_request_id?: string | null;

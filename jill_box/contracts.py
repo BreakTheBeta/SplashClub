@@ -21,6 +21,11 @@ class JoinRoomClientMessage(BaseClientMessage):
     room: str = Field(..., description="ID of the room to join.")
     user: str = Field(..., description="User ID of the player joining.")
 
+class ReJoinRoomClientMessage(BaseClientMessage):
+    type: Literal["rejoin_room"] = "rejoin_room"
+    room: str = Field(..., description="ID of the room to join.")
+    user: str = Field(..., description="User ID of the player joining.")
+
 class StartRoomClientMessage(BaseClientMessage):
     type: Literal["start_room"] = "start_room"
     room: str = Field(..., description="ID of the room to start.")
@@ -46,6 +51,7 @@ IncomingMessage = Union[
     StartRoomClientMessage,
     SubmitAnswerClientMessage,
     SubmitVoteClientMessage,
+    ReJoinRoomClientMessage,
 ]
 
 # --- Server to Client Messages ---
@@ -58,6 +64,15 @@ class ErrorServerMessage(BaseServerMessage):
     type: Literal["error"] = "error"
     message: str = Field(..., description="Error message detailing what went wrong.")
     # code: Optional[str] = None # Could hold the original error enum name or a numeric code
+
+class RoomNotFoundServerMessage(BaseServerMessage):
+    type: Literal["room_not_found"] = "room_not_found"
+    # code: Optional[str] = None # Could hold the original error enum name or a numeric code
+
+class ReJoinRoomSuccessServerMessage(BaseServerMessage):
+    type: Literal["rejoin_room_ok"] = "rejoin_room_ok" # Differentiated from client's join_room
+    room: str = Field(..., description="ID of the room joined.")
+    user: str = Field(..., description="User ID of the player who joined.")
 
 class JoinRoomSuccessServerMessage(BaseServerMessage):
     type: Literal["join_room_ok"] = "join_room_ok" # Differentiated from client's join_room
@@ -107,6 +122,8 @@ OutgoingMessage = Union[
     AskVoteServerMessage,
     ShowResultsServerMessage,
     GameDoneServerMessage,
+    ReJoinRoomSuccessServerMessage,
+    RoomNotFoundServerMessage,
 ]
 
 # --- HELPERS ----

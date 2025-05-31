@@ -8,6 +8,8 @@ import type {
   AskPromptServerMessage,
   UserUpdateServerMessage,
   JoinRoomSuccessServerMessage,
+  ReJoinRoomSuccessServerMessage,
+  RoomNotFoundServerMessage,
 } from "./generated/sockets_types";
 
 export interface PageState {
@@ -27,6 +29,8 @@ export type WsMessageData =
   | ShowResultsServerMessage
   | AskPromptServerMessage
   | UserUpdateServerMessage
+  | ReJoinRoomSuccessServerMessage
+  | RoomNotFoundServerMessage
   | JoinRoomSuccessServerMessage;
 
 
