@@ -1,5 +1,6 @@
 // src/App.tsx
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useParams } from 'react-router';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import Login from './containers/Login';
 import Prompt from './containers/Prompt';
@@ -10,89 +11,113 @@ import type { ThemeColors } from './theme/theme';
 import { defaultTheme } from './theme/theme';
 import ThemeSwitcher from './components/ThemeSwitcher';
 import { ThemeProvider } from './theme/ThemeContext';
-import type { PageState, WsMessageData } from './types'; // Import shared types
+import type { PageState, WsMessageData } from './types';
 import { WS_URL } from './const';
 
-
-const App: React.FC = () => {
+// Create a separate component for the main game logic
+const GameApp: React.FC = () => {
   const [curPage, setCurPage] = useState<PageState>({ page: "login" });
   const [theme, setTheme] = useState<ThemeColors>(defaultTheme);
+  const navigate = useNavigate();
+  const { roomId } = useParams<{ roomId: string }>();
 
-  const {  lastMessage, readyState } = useWebSocket(WS_URL, {
+  const { lastMessage, readyState } = useWebSocket(WS_URL, {
     share: true,
     onOpen: () => console.log('WebSocket connection established.'),
     onClose: () => console.log('WebSocket connection closed.'),
-    shouldReconnect: (closeEvent) => true, // Automatically try to reconnect
-    // onError: (event) => console.error('WebSocket error:', event), // Optional: for debugging
+    shouldReconnect: (closeEvent) => true,
   });
 
-  // Central message handler in App.tsx for global state changes
+  // Enhanced page setter that handles routing
+  const setPageWithRouting = (newPage: PageState) => {
+    setCurPage(newPage);
+    
+    // Navigate to appropriate route based on page state
+    if (newPage.page === 'waiting' || newPage.page === 'prompt' || 
+        newPage.page === 'vote' || newPage.page === 'results' || newPage.page === 'game') {
+      if (newPage.room && newPage.room !== roomId) {
+        navigate(`/room/${newPage.room}`);
+      }
+    } else if (newPage.page === 'login') {
+      navigate('/');
+    }
+  };
+
+  // Central message handler
   useEffect(() => {
     if (lastMessage !== null) {
       try {
         const data: WsMessageData = JSON.parse(lastMessage.data as string);
 
         switch (data.type) {
-          case 'join_room_ok': // Assuming server sends this after successful room join
+          case 'join_room_ok':
             if (data.user && data.room) {
-              setCurPage({ page: 'waiting', user: data.user, room: data.room });
+              setPageWithRouting({ page: 'waiting', user: data.user, room: data.room });
             }
             break;
+          // Add other message handlers as needed
         }
       } catch (e) {
         console.error("Failed to parse WebSocket message in App:", e, lastMessage.data);
       }
     }
-  }, [lastMessage, setCurPage]);
+  }, [lastMessage]);
+
+  // Handle URL changes - if user navigates directly to a room URL
+  useEffect(() => {
+    if (roomId && curPage.page === 'login') {
+      // If user navigates directly to a room URL but isn't logged in,
+      // you might want to redirect to login or handle this case
+      console.log('User navigated directly to room:', roomId);
+    }
+  }, [roomId, curPage.page]);
 
   const renderPage = () => {
-    console.log("Current: ", curPage)
+    console.log("Current: ", curPage);
     switch (curPage.page) {
       case "login":
-        return <Login
-          setCurPage={setCurPage}
-          // lastMessage can be passed if Login needs to react to specific WS messages directly
-        />;
+        return <Login setCurPage={setPageWithRouting} />;
+      
       case "waiting":
-        // Ensure user and room are defined before rendering Waiting
         if (curPage.user && curPage.room) {
           return <Waiting
-            setCurPage={setCurPage}
+            setCurPage={setPageWithRouting}
             user={curPage.user}
             room={curPage.room}
           />;
         }
-        // Fallback or loading state if user/room not ready, though 'join_success' should set them
         return <div>Loading waiting room...</div>;
-      case "prompt": // Assuming "prompt" is a distinct page state
+      
+      case "prompt":
         return <Prompt
-            setCurPage={setCurPage}
-            user={curPage.user || "user empty"}
-            room={curPage.room || "room empty"}
-            prompt={curPage.prompt || "prompt empty"}
-        ></Prompt>
-        return <div>Prompt Page: User: {curPage.user}, Room: {curPage.room}, Prompt: {curPage.prompt} (to be implemented)</div>;
-      case "vote": // Assuming "prompt" is a distinct page state
+          setCurPage={setPageWithRouting}
+          user={curPage.user || "user empty"}
+          room={curPage.room || "room empty"}
+          prompt={curPage.prompt || "prompt empty"}
+        />;
+      
+      case "vote":
         return <Vote
-            setCurPage={setCurPage}
-            user={curPage.user || "user empty"}
-            room={curPage.room || "room empty"}
-            answers={curPage.answers || [{'id': 'NO ID', 'text':"EMPTY ANSWERS"}]}
-            prompt={curPage.prompt || "prompt empty"}
-        >
-        </Vote>
-      case "results": // Assuming "prompt" is a distinct page state
+          setCurPage={setPageWithRouting}
+          user={curPage.user || "user empty"}
+          room={curPage.room || "room empty"}
+          answers={curPage.answers || [{'id': 'NO ID', 'text':"EMPTY ANSWERS"}]}
+          prompt={curPage.prompt || "prompt empty"}
+        />;
+      
+      case "results":
         return <Results
-            setCurPage={setCurPage}
-            user={curPage.user || "user empty"}
-            room={curPage.room || "room empty"}
-            results={curPage.results || {"answer": "empty answer", 'earned': {"empty user": -1}, "total": {"empty user": -1}}}
-        >
-        </Results>
+          setCurPage={setPageWithRouting}
+          user={curPage.user || "user empty"}
+          room={curPage.room || "room empty"}
+          results={curPage.results || {"answer": "empty answer", 'earned': {"empty user": -1}, "total": {"empty user": -1}}}
+        />;
+      
       case "game":
-        return <div>Game Room: User: {curPage.user}, Room: {curPage.room}, Prompt: {curPage.prompt} (to be implemented)</div>;
+        return <div>Game Room: User: {curPage.user}, Room: {curPage.room}, Prompt: {curPage.prompt}</div>;
+      
       default:
-        return <Login setCurPage={setCurPage} />;
+        return <Login setCurPage={setPageWithRouting} />;
     }
   };
 
@@ -110,15 +135,23 @@ const App: React.FC = () => {
         <div className="absolute top-4 right-4">
           <ThemeSwitcher setTheme={setTheme} currentTheme={theme} />
         </div>
-        {/* Optional: Display connection status for debugging */}
-        {/* <div className="absolute top-10 left-4 text-xs p-2 bg-gray-700 text-white rounded">
-          WS Status: {connectionStatus} | Page: {curPage.page} | User: {curPage.user || 'N/A'} | Room: {curPage.room || 'N/A'}
-        </div> */}
         <div className={`w-full max-w-4xl mx-auto flex justify-center px-4 py-8 ${theme.background.card} ${theme.text.primary}`}>
           {readyState === ReadyState.OPEN ? renderPage() : <div>Connecting to server... ({connectionStatus})</div>}
         </div>
       </div>
     </ThemeProvider>
+  );
+};
+
+// Main App component with Router
+const App: React.FC = () => {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<GameApp />} />
+        <Route path="/room/:roomId" element={<GameApp />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 
