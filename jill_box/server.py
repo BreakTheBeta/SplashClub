@@ -33,6 +33,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(mes
 
 # Global state: ROOM_ID -> USER_ID -> WebSocket
 USERS: Dict[str, Dict[str, websockets.ServerConnection]] = defaultdict(dict)
+
+
+
 # Map WebSocket back to user details for quick lookup on disconnect
 WEBSOCKET_TO_USER_INFO: Dict[websockets.ServerConnection, Dict[str, str]] = {}
 
