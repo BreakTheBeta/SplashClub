@@ -64,16 +64,6 @@ const Results: React.FC<ResultsProps> = (props) => {
               room: props.room,
               prompt: data.prompt
             });
-        } else if (data.type === 'show_results') {
-          if (data.results) {
-            console.log("Results: WE GOT THE RESULTS from WebSocket");
-            setCurrentResults(data.results);
-            setGameOver(false); 
-          } else {
-            console.error("Results: 'show_results' message missing results data.", data);
-            setError("Failed to load results from server.");
-            setShowError(true);
-          }
         } else if (data.type === 'game_done') {
           console.log("Results: Game done message received.");
           setGameOver(true);
