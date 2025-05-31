@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Button from "../components/Button"; // Your custom Button
 import Toast from "../components/Toast";   // Your custom Toast
 import { useTheme } from "../theme/ThemeContext";
-import type { PageState, WsMessageData, ShowResultsMessageData } from "../types"; // Import shared types
+import type { PageState, WsMessageData } from "../types"; // Import shared types
 import useWebSocket from "react-use-websocket";
 import { WS_URL } from "../const";
 
@@ -14,7 +14,7 @@ interface Answer {
 }
 
 interface VoteProps {
-  setCurPage: React.Dispatch<React.SetStateAction<PageState>>;
+  setCurPage: (newPage: PageState) => void;
   user: string;
   room: string;
   prompt: string;    // The prompt text for this voting round
@@ -40,18 +40,18 @@ const Vote: React.FC<VoteProps> = (props) => {
         // console.log('Vote received message:', data);
 
         // Optional: Add room check if your backend might send messages for other rooms
-        if (data.room && data.room !== props.room) {
+        if (props.room && props.room !== props.room) {
           return;
         }
 
         if (data.type === "error") {
-          setError(data.msg || "An unexpected error occurred.");
+          setError(data.message || "An unexpected error occurred.");
           setShowError(true);
           setWaiting(false); // Re-enable buttons if vote submission caused an error
         } else if (data.type === "show_results") {
           console.log("need to show the results")
           // Ensure this is the correct type for ShowResultsMessageData
-          const resultsData = data as ShowResultsMessageData;
+          const resultsData = data 
           if (resultsData.results) {
             props.setCurPage({
               page: "results",

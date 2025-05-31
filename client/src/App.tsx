@@ -45,7 +45,11 @@ const GameApp: React.FC = () => {
     },
     shouldReconnect: (closeEvent) => {
       // Only try to reconnect if we're in a room and haven't exceeded max attempts
-      return roomId && reconnectAttempts < 3;
+      if (roomId) {
+        return reconnectAttempts < 3;
+      } else{
+        return false
+      }
     },
     reconnectAttempts: 3,
     reconnectInterval: 2000,

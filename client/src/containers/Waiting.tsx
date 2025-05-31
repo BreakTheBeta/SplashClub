@@ -8,7 +8,7 @@ import useWebSocket from "react-use-websocket";
 import { WS_URL } from "../const";
 
 interface WaitingProps {
-  setCurPage: React.Dispatch<React.SetStateAction<PageState>>;
+  setCurPage: (newPage: PageState) => void;
   user: string;
   room: string;
 }
@@ -44,10 +44,10 @@ const Waiting: React.FC<WaitingProps> = (props) => {
         } else if (data.type === 'error') {
           // Optionally, check if error is relevant to this room/context
           // if (data.room === props.room || !data.room) {
-          setError(data.msg || "An error occurred");
+          setError(data.message || "An error occurred");
           setShowError(true);
           // }
-        } else if (data.prompt !== undefined) {
+        } else if (data.type == "ask_prompt") {
           // If a message contains a 'prompt', transition to the prompt page
           // This follows the logic from your original 'else' block.
           // Ensure this message is intended for the current room.

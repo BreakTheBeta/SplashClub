@@ -9,7 +9,7 @@ import useWebSocket from "react-use-websocket";
 import { WS_URL } from "../const";
 
 interface PromptProps {
-  setCurPage: React.Dispatch<React.SetStateAction<PageState>>;
+  setCurPage: (newPage: PageState) => void;
   user: string;
   room: string;
   prompt: string;
@@ -41,7 +41,7 @@ const Prompt: React.FC<PromptProps> = (props) => {
         // }
 
         if (data.type === "error") {
-          setError(data.msg || "An unexpected error occurred.");
+          setError(data.message || "An unexpected error occurred.");
           setShowError(true);
           setWaiting(false); // Re-enable form if submission caused an error
         } else if (

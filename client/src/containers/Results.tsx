@@ -11,7 +11,7 @@ import type { ResultDetail } from "../generated/sockets_types";
 
 // Props for the Results component
 interface ResultsProps {
-  setCurPage: React.Dispatch<React.SetStateAction<PageState>>;
+  setCurPage: (newPage: PageState) => void;
   user: string;
   room: string;
   results: ResultDetail[] | null | undefined; // Allow results to be null or undefined

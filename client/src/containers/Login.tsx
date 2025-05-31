@@ -9,7 +9,7 @@ import useWebSocket from "react-use-websocket";
 import { WS_URL } from "../const";
 
 interface LoginProps {
-  setCurPage: React.Dispatch<React.SetStateAction<PageState>>;
+  setCurPage: (newPage: PageState) => void;
 }
 
 const Login: React.FC<LoginProps> = (props) => {
@@ -33,7 +33,7 @@ const Login: React.FC<LoginProps> = (props) => {
         // These should match what your backend sends.
         const successTypes = ['join_success', 'create_success', 'room_created', 'joined_room', 'join_room_ok']; // Add all relevant success types
 
-        if (successTypes.includes(data.type)) {
+        if (data.type == "join_room_ok") {
           if (data.user && data.room) {
             props.setCurPage({
               page: "waiting",
@@ -47,7 +47,7 @@ const Login: React.FC<LoginProps> = (props) => {
             console.error("Success message missing user/room:", data);
           }
         } else if (data.type === 'error') {
-          setError(data.msg || "An unknown error occurred");
+          setError(data.message || "An unknown error occurred");
           setShowError(true);
         }
         // Other message types are ignored by the Login component,
