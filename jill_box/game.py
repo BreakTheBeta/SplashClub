@@ -258,6 +258,8 @@ class PromptRoom(Room):
             return (InteractReturnCodes.SUCCESS, self.state, {})
         elif self.state == State.COLLECTING_ANSWERS:
             return (InteractReturnCodes.SUCCESS, self.state, self.get_prompt())
+        elif self.state == State.WAITING_TO_START:
+            return (InteractReturnCodes.SUCCESS, self.state, {"players": list(self.players.keys())})
         elif self.state == State.VOTING:
             if player is None:
                 return (InteractReturnCodes.PLAYER_NOT_FOUND, self.state, {})
