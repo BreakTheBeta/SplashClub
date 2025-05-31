@@ -10,8 +10,14 @@ dependencies = [
     "pydantic>=2.11.4",
     "pydantic-to-typescript>=2.0.0",
     "pyrefly>=0.17.0",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=1.0.0",
     "websocket>=0.2.1",
     "websockets>=15.0.1",
+]
+[tool.pytest.ini_options]
+markers = [
+    "asyncio",
 ]
 [tool.pyrefly]
 project_includes = ["**/*"]

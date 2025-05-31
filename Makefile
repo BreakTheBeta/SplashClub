@@ -14,8 +14,10 @@ kill:
 	sudo lsof -i tcp:6969 
 
 test:
-	python3 game_test.py
+	uv run pytest
 
 gen_types:
 	pydantic2ts --module ./jill_box/contracts.py --output client/src/generated/sockets_types.ts
+
+
 
