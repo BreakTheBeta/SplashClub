@@ -1,8 +1,4 @@
-.PHONY: server client client_old test kill gen_types
-
-client_old:
-	nvm use 23
-	cd http/app && yarn start
+.PHONY: server client test kill gen_types
 
 client:
 	cd client && yarn serve
