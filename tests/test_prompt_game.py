@@ -7,7 +7,7 @@ import string
 from typing import Dict, Any
 
 # Import the classes we're testing
-from jill_box.game import (  # Replace 'your_module' with actual module name
+from splash_club.game import (  # Replace 'your_module' with actual module name
     PromptRoom, GameGateway, Player, State, 
     JoinReturnCodes, StartReturnCodes, InteractReturnCodes,
     _random_id, _load_prompts

@@ -2,12 +2,12 @@ import asyncio
 import logging
 import websockets
 from typing import Optional
-from jill_box.connection_manager import ConnectionManager
-from jill_box.message_router import MessageRouter
-from jill_box.game_state_manager import GameStateManager
-from jill_box.game import GameGateway
-from jill_box.utils.websocket_utils import parse_message_safely
-from jill_box.utils.error_handling import send_generic_error
+from splash_club.connection_manager import ConnectionManager
+from splash_club.message_router import MessageRouter
+from splash_club.game_state_manager import GameStateManager
+from splash_club.game import GameGateway
+from splash_club.utils.websocket_utils import parse_message_safely
+from splash_club.utils.error_handling import send_generic_error
 
 logger = logging.getLogger(__name__)
 

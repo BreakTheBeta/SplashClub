@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from jill_box.websocket_server import WebSocketServer
+from splash_club.websocket_server import WebSocketServer
 
 def setup_logging():
     """Configure logging for the application."""

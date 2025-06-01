@@ -5,13 +5,13 @@ import logging
 import asyncio
 from typing import List
 from pydantic import ValidationError
-from jill_box.contracts import (
+from splash_club.contracts import (
     AskPromptServerMessage, AskVoteServerMessage, ShowResultsServerMessage,
     GameDoneServerMessage, AnswerOptionForVote, ResultDetail
 )
-from jill_box.game import State
-from jill_box.connection_manager import ConnectionManager
-from jill_box.game import GameGateway
+from splash_club.game import State
+from splash_club.connection_manager import ConnectionManager
+from splash_club.game import GameGateway
 
 
 class GameStateManager:

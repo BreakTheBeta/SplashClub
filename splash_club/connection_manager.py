@@ -5,7 +5,7 @@ import asyncio
 from collections import defaultdict
 from typing import Dict, List, Optional
 import websockets
-from jill_box.contracts import OutgoingMessage
+from splash_club.contracts import OutgoingMessage
 
 
 class ConnectionManager:

@@ -1,7 +1,7 @@
 import logging
 import websockets
 from typing import Optional
-from jill_box.contracts import ErrorServerMessage, RoomNotFoundServerMessage
+from splash_club.contracts import ErrorServerMessage, RoomNotFoundServerMessage
 from .websocket_utils import safe_websocket_send
 
 logger = logging.getLogger(__name__)

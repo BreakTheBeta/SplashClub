@@ -4,11 +4,11 @@ import logging
 import asyncio
 import websockets
 from .base_handler import BaseHandler
-from jill_box.contracts import (
+from splash_club.contracts import (
     StartRoomClientMessage, SubmitAnswerClientMessage, SubmitVoteClientMessage, IncomingMessage
 )
-from jill_box.game import StartReturnCodes, InteractReturnCodes, State
-from jill_box.game_state_manager import GameStateManager
+from splash_club.game import StartReturnCodes, InteractReturnCodes, State
+from splash_club.game_state_manager import GameStateManager
 
 
 class StartRoomHandler(BaseHandler):

@@ -1,11 +1,11 @@
 import logging
 from typing import Dict, Type, Protocol
 import websockets
-from jill_box.contracts import IncomingMessage
-from jill_box.handlers.base_handler import BaseHandler
-from jill_box.handlers.room_handlers import CreateRoomHandler, JoinRoomHandler, ReJoinRoomHandler
-from jill_box.handlers.game_handlers import StartRoomHandler, SubmitAnswerHandler, SubmitVoteHandler
-from jill_box.utils.error_handling import send_generic_error
+from splash_club.contracts import IncomingMessage
+from splash_club.handlers.base_handler import BaseHandler
+from splash_club.handlers.room_handlers import CreateRoomHandler, JoinRoomHandler, ReJoinRoomHandler
+from splash_club.handlers.game_handlers import StartRoomHandler, SubmitAnswerHandler, SubmitVoteHandler
+from splash_club.utils.error_handling import send_generic_error
 
 logger = logging.getLogger(__name__)
 

@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 import json
 import time 
 
-from jill_box.contracts import (
+from splash_club.contracts import (
     IncomingMessage, OutgoingMessage, # Base Union types
     # Specific client message types (for isinstance checks or direct construction if needed)
     CreateRoomClientMessage, JoinRoomClientMessage, StartRoomClientMessage,
@@ -35,7 +35,7 @@ def _random_id() -> str:
 
 def _load_prompts() -> List[Tuple[str, str]]:
     prompts: List[Tuple[str, str]] = []
-    with open('jill_box/data/questions.txt') as fd:
+    with open('splash_club/data/questions.txt') as fd:
         for line in fd.readlines():
             prompts.append(tuple(line.strip().split('\t')))
     return prompts

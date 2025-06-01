@@ -4,12 +4,12 @@ import time
 import logging
 import websockets
 from .base_handler import BaseHandler
-from jill_box.contracts import (
+from splash_club.contracts import (
     CreateRoomClientMessage, JoinRoomClientMessage, ReJoinRoomClientMessage,
     JoinRoomSuccessServerMessage, ReJoinRoomSuccessServerMessage, RoomNotFoundServerMessage
 )
-from jill_box.game import PromptRoom, JoinReturnCodes
-from jill_box.connection_manager import ConnectionManager
+from splash_club.game import PromptRoom, JoinReturnCodes
+from splash_club.connection_manager import ConnectionManager
 
 
 class CreateRoomHandler(BaseHandler):

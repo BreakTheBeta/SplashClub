@@ -2,7 +2,7 @@ import json
 import logging
 import websockets
 from typing import Optional
-from jill_box.contracts import IncomingMessage, parse_incoming_message
+from splash_club.contracts import IncomingMessage, parse_incoming_message
 from pydantic import ValidationError
 
 logger = logging.getLogger(__name__)

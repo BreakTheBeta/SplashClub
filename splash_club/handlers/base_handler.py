@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 import logging
 import websockets
 from typing import Optional
-from jill_box.contracts import IncomingMessage, UserUpdateServerMessage
-from jill_box.utils.error_handling import send_typed_error_message, send_generic_error
-from jill_box.connection_manager import ConnectionManager
+from splash_club.contracts import IncomingMessage, UserUpdateServerMessage
+from splash_club.utils.error_handling import send_typed_error_message, send_generic_error
+from splash_club.connection_manager import ConnectionManager
 
 logger = logging.getLogger(__name__)
 
