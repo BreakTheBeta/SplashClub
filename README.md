@@ -34,3 +34,10 @@ make client
 ```
 
 The game will be available at `http://localhost:3000` (or the port shown in your terminal).
+
+## Todo List
+
+- [x] Disconnect/reconnect logic to stay in game
+- [ ] Clean up App.tsx
+- [ ] Add sound effects and other assets
+- [ ] Add room owner privileges
