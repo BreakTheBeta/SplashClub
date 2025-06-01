@@ -31,7 +31,7 @@ from typing import (
 
 def _random_id() -> str:
     ascii = string.ascii_lowercase
-    return "".join(random.choices(ascii, k=GameGateway.NUM_ROOM_LETTERS))
+    return "".join(random.choices(ascii, k=GameGateway.NUM_ROOM_LETTERS)).upper()
 
 def _load_prompts() -> List[Tuple[str, str]]:
     prompts: List[Tuple[str, str]] = []

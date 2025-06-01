@@ -1,17 +1,18 @@
 from abc import ABC, abstractmethod
 import logging
 import websockets
-from typing import Optional
+from typing import Optional, Dict
 from splash_club.contracts import IncomingMessage, UserUpdateServerMessage
 from splash_club.utils.error_handling import send_typed_error_message, send_generic_error
 from splash_club.connection_manager import ConnectionManager
+from splash_club.game import GameGateway
 
 logger = logging.getLogger(__name__)
 
 class BaseHandler(ABC):
     """Base class for all message handlers."""
     
-    def __init__(self, connection_manager: ConnectionManager, game_gateway, game_state_manager=None):
+    def __init__(self, connection_manager: ConnectionManager, game_gateway: GameGateway, game_state_manager=None):
         self.connection_manager = connection_manager
         self.game_gateway = game_gateway
         self.game_state_manager = game_state_manager
@@ -42,15 +43,12 @@ class BaseHandler(ABC):
         """Send a generic error message."""
         return await send_generic_error(websocket, message, request_id)
     
-    def get_user_context(self, websocket: websockets.ServerConnection) -> tuple[Optional[str], Optional[str]]:
+    def get_user_context(self, websocket: websockets.ServerConnection) -> Optional[Dict[str, str]]:
         """
-        Get the current user's room and user ID from the websocket.
-        Returns (room_id, user_id) tuple, both can be None if not authenticated.
+        Get the current user's room, user ID, and name from the websocket.
+        Returns dict with room_id, user_id, and user_name, or None if not authenticated.
         """
-        user_info = self.connection_manager.get_user_info(websocket)
-        if user_info:
-            return user_info.get("room_id"), user_info.get("user_id")
-        return None, None
+        return self.connection_manager.get_user_info(websocket)
     
     def validate_user_in_room(
         self, 
@@ -62,7 +60,12 @@ class BaseHandler(ABC):
         Validate that the websocket user matches the expected room and user.
         Returns True if valid, False otherwise.
         """
-        current_room_id, current_user_id = self.get_user_context(websocket)
+        user_info = self.get_user_context(websocket)
+        if not user_info:
+            return False
+            
+        current_room_id = user_info.get("room_id")
+        current_user_id = user_info.get("user_id")
         
         if current_room_id != expected_room_id or current_user_id != expected_user_id:
             logger.warning(
@@ -81,7 +84,7 @@ class BaseHandler(ABC):
         try:
             users = self.connection_manager.get_room_users(room_id)
             message = UserUpdateServerMessage(
-                users=users
+                users=users  # users is already a List[str], no need to extract ["id"]
             )
             await self.connection_manager.broadcast_to_room(room_id, message)
             return True

@@ -16,7 +16,14 @@ class StartRoomHandler(BaseHandler):
     
     async def handle(self, websocket: websockets.ServerConnection, message: StartRoomClientMessage) -> bool:
         try:
-            current_room_id, current_user_id = self.get_user_context(websocket)
+            user_info = self.get_user_context(websocket)
+            
+            if not user_info:
+                await self.send_generic_error(websocket, "Must be in a room to start game", message.request_id)
+                return False
+                
+            current_room_id = user_info.get("room_id")
+            current_user_id = user_info.get("user_id")
             
             if not current_room_id or not current_user_id:
                 await self.send_generic_error(websocket, "Must be in a room to start game", message.request_id)
@@ -54,7 +61,14 @@ class SubmitAnswerHandler(BaseHandler):
     
     async def handle(self, websocket: websockets.ServerConnection, message: SubmitAnswerClientMessage) -> bool:
         try:
-            current_room_id, current_user_id = self.get_user_context(websocket)
+            user_info = self.get_user_context(websocket)
+            
+            if not user_info:
+                await self.send_generic_error(websocket, "Must be in a room to submit answer", message.request_id)
+                return False
+                
+            current_room_id = user_info.get("room_id")
+            current_user_id = user_info.get("user_id")
             
             if not current_room_id or not current_user_id:
                 await self.send_generic_error(websocket, "Must be in a room to submit answer", message.request_id)
@@ -98,7 +112,14 @@ class SubmitVoteHandler(BaseHandler):
     
     async def handle(self, websocket: websockets.ServerConnection, message: SubmitVoteClientMessage) -> bool:
         try:
-            current_room_id, current_user_id = self.get_user_context(websocket)
+            user_info = self.get_user_context(websocket)
+            
+            if not user_info:
+                await self.send_generic_error(websocket, "Must be in a room to submit vote", message.request_id)
+                return False
+                
+            current_room_id = user_info.get("room_id")
+            current_user_id = user_info.get("user_id")
             
             if not current_room_id or not current_user_id:
                 await self.send_generic_error(websocket, "Must be in a room to submit vote", message.request_id)
