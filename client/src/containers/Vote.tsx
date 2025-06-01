@@ -3,22 +3,22 @@ import React, { useState, useEffect } from "react";
 import Button from "../components/Button"; // Your custom Button
 import Toast from "../components/Toast";   // Your custom Toast
 import { useTheme } from "../theme/ThemeContext";
-import type { PageState, WsMessageData } from "../types"; // Import shared types
+import type { PageState } from "../types"; // Import shared types
+import type { 
+  SubmitVoteClientMessage,
+  ErrorServerMessage,
+  ShowResultsServerMessage,
+  AnswerOptionForVote
+} from "../generated/sockets_types";
 import useWebSocket from "react-use-websocket";
 import { WS_URL } from "../const";
-
-
-interface Answer {
-  id: string;
-  text: string;
-}
 
 interface VoteProps {
   setCurPage: (newPage: PageState) => void;
   user: string;
   room: string;
   prompt: string;    // The prompt text for this voting round
-  answers: Answer[];
+  answers: AnswerOptionForVote[];
 }
 
 const Vote: React.FC<VoteProps> = (props) => {
@@ -36,7 +36,7 @@ const Vote: React.FC<VoteProps> = (props) => {
   useEffect(() => {
     if (lastMessage !== null) {
       try {
-        const data: WsMessageData = JSON.parse(lastMessage.data as string);
+        const data = JSON.parse(lastMessage.data as string) as (ErrorServerMessage | ShowResultsServerMessage);
         // console.log('Vote received message:', data);
 
         // Optional: Add room check if your backend might send messages for other rooms
@@ -51,21 +51,13 @@ const Vote: React.FC<VoteProps> = (props) => {
         } else if (data.type === "show_results") {
           console.log("need to show the results")
           // Ensure this is the correct type for ShowResultsMessageData
-          const resultsData = data 
-          if (resultsData.results) {
-            props.setCurPage({
-              page: "results",
-              user: props.user,
-              room: props.room,
-              results: resultsData.results,
-              prompt: props.prompt, // Pass the current prompt to the results page
-            });
-          } else {
-            console.error("Message 'show_results' received without 'results' data:", data);
-            setError("Failed to retrieve results data from server.");
-            setShowError(true);
-            setWaiting(false);
-          }
+          props.setCurPage({
+            page: "results",
+            user: props.user,
+            room: props.room,
+            results: data.results,
+            prompt: props.prompt, // Pass the current prompt to the results page
+          });
         }
         // Else: unhandled message type for Vote component specifically
         // console.warn("Unhandled message type in Vote:", data.type);
@@ -87,14 +79,13 @@ const Vote: React.FC<VoteProps> = (props) => {
 
     setSelected(id);
     setWaiting(true);
-    sendMessage(
-      JSON.stringify({
-        type: "submit_vote",
-        room: props.room,
-        user: props.user,
-        voted_for_answer_id: id,
-      })
-    );
+    const message: SubmitVoteClientMessage = {
+      type: "submit_vote",
+      room: props.room,
+      user: props.user,
+      voted_for_answer_id: id
+    };
+    sendMessage(JSON.stringify(message));
   };
 
   const handleCloseError = (): void => {
@@ -130,12 +121,12 @@ const Vote: React.FC<VoteProps> = (props) => {
 
         {/* Answer Options */}
         <div className="space-y-3 mb-6">
-          {props.answers.map((answer, i) => (
+          {props.answers.map((answer) => (
             <Button
-              key={`answer-${i}`}
-              variant={getButtonVariant(answer.id)}
-              disabled={waiting || selected !== ""} // Disable after a vote is cast and while waiting
+              key={answer.id}
               onClick={() => handleVote(answer.id)}
+              disabled={waiting || selected !== ""} // Disable after a vote is cast and while waiting
+              variant={getButtonVariant(answer.id)}
               fullWidth
               className={selected === answer.id ? "ring-2 ring-offset-2 ring-offset-gray-800 ring-cyan-500" : ""}
             >

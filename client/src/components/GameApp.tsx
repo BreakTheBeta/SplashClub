@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { ReadyState } from 'react-use-websocket';
 import Login from '../containers/Login';
@@ -20,19 +20,33 @@ const GameApp: React.FC = () => {
   const [storedUserId, setStoredUserId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
+  const hasAttemptedRejoin = useRef(false);
 
-  // Load stored user ID on component mount
-  useEffect(() => {
-    const userId = getUserId();
-    setStoredUserId(userId);
-    
-    if (roomId && !userId) {
-      console.log('No stored user ID found, redirecting to home');
+  // Ref to hold the attemptRoomRejoin function from the hook
+  const attemptRoomRejoinRef = useRef<((roomId: string, userId: string) => void) | null>(null);
+
+  const setPageWithRouting = useCallback((newPage: PageState) => {
+    setCurPage(newPage);
+
+    if (newPage.user && (newPage.page === 'waiting' || newPage.page === 'prompt' ||
+        newPage.page === 'vote' || newPage.page === 'results' || newPage.page === 'game')) {
+      saveUserId(newPage.user);
+      setStoredUserId(newPage.user);
+    }
+
+    if (newPage.page === 'waiting' || newPage.page === 'prompt' ||
+        newPage.page === 'vote' || newPage.page === 'results' || newPage.page === 'game') {
+      if (newPage.room && newPage.room !== roomId) {
+        navigate(`/room/${newPage.room}`);
+      }
+    } else if (newPage.page === 'login') {
+      clearUserId();
+      setStoredUserId(null);
       navigate('/');
     }
-  }, [roomId, navigate]);
+  }, [navigate, roomId]);
 
-  const handleMessage = (data: WsMessageData) => {
+  const handleMessage = useCallback((data: WsMessageData) => {
     switch (data.type) {
       case 'join_room_ok':
       case 'rejoin_room_ok':
@@ -53,39 +67,51 @@ const GameApp: React.FC = () => {
         navigate('/');
         break;
     }
-  };
+  }, [navigate, setPageWithRouting, setStoredUserId]); // setStoredUserId is stable
+
+  // Memoized onReconnect handler that uses the ref
+  const memoizedOnReconnect = useCallback(() => {
+    if (roomId && storedUserId && attemptRoomRejoinRef.current) {
+      attemptRoomRejoinRef.current(roomId, storedUserId);
+    }
+  }, [roomId, storedUserId]); // Depends on roomId and storedUserId
 
   const { readyState, sendMessage, reconnectAttempts, isReconnecting, attemptRoomRejoin } = useGameWebSocket({
     roomId,
     onMessage: handleMessage,
-    onReconnect: () => {
-      if (roomId && storedUserId) {
-        attemptRoomRejoin(roomId, storedUserId);
-      }
-    },
+    onReconnect: memoizedOnReconnect, // Pass the memoized handler that uses the ref
   });
 
-  // Enhanced page setter that handles routing and user ID storage
-  const setPageWithRouting = (newPage: PageState) => {
-    setCurPage(newPage);
+  // Effect to keep the ref updated with the function from the hook
+  useEffect(() => {
+    attemptRoomRejoinRef.current = attemptRoomRejoin;
+  }, [attemptRoomRejoin]); // This effect runs when attemptRoomRejoin reference changes
+
+  // Handle initial user ID loading
+  useEffect(() => {
+    const userId = getUserId();
+    setStoredUserId(userId);
     
-    if (newPage.user && (newPage.page === 'waiting' || newPage.page === 'prompt' || 
-        newPage.page === 'vote' || newPage.page === 'results' || newPage.page === 'game')) {
-      saveUserId(newPage.user);
-      setStoredUserId(newPage.user);
-    }
-    
-    if (newPage.page === 'waiting' || newPage.page === 'prompt' || 
-        newPage.page === 'vote' || newPage.page === 'results' || newPage.page === 'game') {
-      if (newPage.room && newPage.room !== roomId) {
-        navigate(`/room/${newPage.room}`);
-      }
-    } else if (newPage.page === 'login') {
-      clearUserId();
-      setStoredUserId(null);
+    if (roomId && !userId) {
+      console.log('No stored user ID found, redirecting to home');
       navigate('/');
     }
-  };
+  }, [roomId, navigate]);
+
+  // Handle room rejoin attempt
+  useEffect(() => {
+    if (!roomId || !storedUserId || readyState !== ReadyState.OPEN || hasAttemptedRejoin.current) {
+      return;
+    }
+
+    hasAttemptedRejoin.current = true;
+    const message = {
+      type: "rejoin_room",
+      user: storedUserId,
+      room: roomId
+    };
+    sendMessage(JSON.stringify(message));
+  }, [roomId, storedUserId, readyState, sendMessage]);
 
   const renderPage = () => {
     if (isReconnecting && roomId) {
@@ -172,4 +198,4 @@ const GameApp: React.FC = () => {
   );
 };
 
-export default GameApp; 
+export default GameApp;

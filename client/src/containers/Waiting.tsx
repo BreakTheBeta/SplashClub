@@ -3,7 +3,13 @@ import React, { useState, useEffect } from "react";
 import Button from "../components/Button";
 import Toast from "../components/Toast";
 import { useTheme } from '../theme/ThemeContext';
-import type { PageState, WsMessageData } from '../types'; // Import shared types
+import type { PageState } from '../types';
+import type { 
+  StartRoomClientMessage,
+  UserUpdateServerMessage,
+  ErrorServerMessage,
+  AskPromptServerMessage
+} from '../generated/sockets_types';
 import useWebSocket from "react-use-websocket";
 import { WS_URL } from "../const";
 
@@ -33,7 +39,7 @@ const Waiting: React.FC<WaitingProps> = (props) => {
   useEffect(() => {
     if (lastMessage !== null) {
       try {
-        const data: WsMessageData = JSON.parse(lastMessage.data as string);
+        const data = JSON.parse(lastMessage.data as string) as (UserUpdateServerMessage | ErrorServerMessage | AskPromptServerMessage);
         // console.log('Waiting received message:', data);
 
         if (data.type === 'user_update') {
@@ -47,7 +53,7 @@ const Waiting: React.FC<WaitingProps> = (props) => {
           setError(data.message || "An error occurred");
           setShowError(true);
           // }
-        } else if (data.type == "ask_prompt") {
+        } else if (data.type === "ask_prompt") {
           // If a message contains a 'prompt', transition to the prompt page
           // This follows the logic from your original 'else' block.
           // Ensure this message is intended for the current room.
@@ -78,10 +84,11 @@ const Waiting: React.FC<WaitingProps> = (props) => {
   }
 
   function handleStart(): void {
-    sendMessage(JSON.stringify({
-      type: "start_room", // Or "start_game" depending on your backend
+    const message: StartRoomClientMessage = {
+      type: "start_room",
       room: props.room
-    }));
+    };
+    sendMessage(JSON.stringify(message));
   }
 
   return (

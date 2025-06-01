@@ -5,8 +5,13 @@ import { useTheme } from '../theme/ThemeContext';
 import Toast from "../components/Toast";
 import useWebSocket from "react-use-websocket";
 import { WS_URL } from "../const";
-import type { PageState, WsMessageData } from "../types";
-import type { ResultDetail } from "../generated/sockets_types";
+import type { PageState } from "../types";
+import type { 
+  ResultDetail,
+  ErrorServerMessage,
+  AskPromptServerMessage,
+  GameDoneServerMessage
+} from "../generated/sockets_types";
 
 
 // Props for the Results component
@@ -46,8 +51,7 @@ const Results: React.FC<ResultsProps> = (props) => {
   useEffect(() => {
     if (lastMessage !== null) {
       try {
-        const data: WsMessageData = JSON.parse(lastMessage.data as string);
-        // console.log('Results: Received WebSocket message:', data);
+        const data = JSON.parse(lastMessage.data as string) as (ErrorServerMessage | AskPromptServerMessage | GameDoneServerMessage);
 
         if (props.room && props.room !== props.room) {
           // console.log(`Results: Message for room ${data.room}, current room ${props.room}. Ignoring.`);
@@ -58,12 +62,12 @@ const Results: React.FC<ResultsProps> = (props) => {
           setError(data.message || "An unexpected error occurred from the server.");
           setShowError(true);
         } else if (data.type === "ask_prompt") {
-            props.setCurPage({
-              page: "prompt",
-              user: props.user,
-              room: props.room,
-              prompt: data.prompt
-            });
+          props.setCurPage({
+            page: "prompt",
+            user: props.user,
+            room: props.room,
+            prompt: data.prompt
+          });
         } else if (data.type === 'game_done') {
           console.log("Results: Game done message received.");
           setGameOver(true);
@@ -103,7 +107,7 @@ const Results: React.FC<ResultsProps> = (props) => {
       return (
         <div className={`container mx-auto px-4 py-8 ${theme.background.page} text-center`}>
           <h2 className={`text-xl font-semibold ${theme.text.primary}`}>
-            Waiting for results...
+            Loading results...
           </h2>
           {/* Toast for non-critical errors or information, normally hidden if no error */}
           <Toast message={error} isVisible={showError} onClose={handleCloseError} />
@@ -136,13 +140,13 @@ const Results: React.FC<ResultsProps> = (props) => {
         <div className="mb-6">
           <h3 className={`text-lg font-semibold mb-2 ${theme.text.primary}`}>Earned This Round</h3>
           <ul className={`${theme.border} border rounded-md divide-y ${theme.success || 'divide-gray-200'} ${theme.background.card}`}>
-            {currentResults.map((key) => (
+            {currentResults.map((result) => (
               <li
-                key={`earned-${key}`}
+                key={`earned-${result.user}`}
                 className={`px-4 py-2 flex justify-between items-center ${theme.text.primary}`}
               >
-                <span>{key.user}</span>
-                <span className="font-medium">{key.score} points</span>
+                <span>{result.user}</span>
+                <span className="font-medium">{result.score} points</span>
               </li>
             ))}
           </ul>

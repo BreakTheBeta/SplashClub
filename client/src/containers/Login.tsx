@@ -4,7 +4,13 @@ import Button from "../components/Button";
 import Input from "../components/Input";
 import Toast from "../components/Toast";
 import { useTheme } from '../theme/ThemeContext';
-import type { PageState, WsMessageData } from '../types'; // Import shared types
+import type { PageState } from '../types';
+import type { 
+  JoinRoomClientMessage, 
+  CreateRoomClientMessage,
+  JoinRoomSuccessServerMessage,
+  ErrorServerMessage
+} from '../generated/sockets_types';
 import useWebSocket from "react-use-websocket";
 import { WS_URL } from "../const";
 
@@ -26,14 +32,10 @@ const Login: React.FC<LoginProps> = (props) => {
   useEffect(() => {
     if (lastMessage !== null) {
       try {
-        const data: WsMessageData = JSON.parse(lastMessage.data as string);
+        const data = JSON.parse(lastMessage.data as string) as (JoinRoomSuccessServerMessage | ErrorServerMessage);
         // console.log("Login component received message:", data);
 
-        // Define what message types indicate a successful login/room entry
-        // These should match what your backend sends.
-        const successTypes = ['join_success', 'create_success', 'room_created', 'joined_room', 'join_room_ok']; // Add all relevant success types
-
-        if (data.type == "join_room_ok") {
+        if (data.type === "join_room_ok") {
           if (data.user && data.room) {
             props.setCurPage({
               page: "waiting",
@@ -41,7 +43,6 @@ const Login: React.FC<LoginProps> = (props) => {
               room: data.room
             });
           } else {
-            // This case might indicate a backend issue or unexpected success message format
             setError("Login successful, but user/room data missing. Please try again.");
             setShowError(true);
             console.error("Success message missing user/room:", data);
@@ -50,11 +51,8 @@ const Login: React.FC<LoginProps> = (props) => {
           setError(data.message || "An unknown error occurred");
           setShowError(true);
         }
-        // Other message types are ignored by the Login component,
-        // or might be handled by App.tsx if they are global.
       } catch (e) {
         console.error("Failed to parse WebSocket message in Login:", e, lastMessage.data);
-        setError("Received an invalid message from the server.");
         setShowError(true);
       }
     }
@@ -83,11 +81,12 @@ const Login: React.FC<LoginProps> = (props) => {
       setShowError(true);
       return;
     }
-    sendMessage(JSON.stringify({
+    const message: JoinRoomClientMessage = {
       type: "join_room",
       user: userInput.trim(),
-      room: roomInput // Standardize room code to uppercase, for example
-    }));
+      room: roomInput
+    };
+    sendMessage(JSON.stringify(message));
   }
 
   function handleCreate(event: any): void {
@@ -97,10 +96,11 @@ const Login: React.FC<LoginProps> = (props) => {
       setShowError(true);
       return;
     }
-    sendMessage(JSON.stringify({
+    const message: CreateRoomClientMessage = {
       type: "create_room",
       user: userInput.trim()
-    }));
+    };
+    sendMessage(JSON.stringify(message));
   }
 
   const handleCloseError = (): void => {
@@ -109,9 +109,8 @@ const Login: React.FC<LoginProps> = (props) => {
   };
 
   return (
-    <div className={`container mx-auto px-4 py-8`}> {/* Removed theme.background.page as App handles it */}
+    <div className={`container mx-auto px-4 py-8`}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Join Room Form */}
         <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card}`}>
           <h2 className={`text-xl font-semibold mb-4 ${theme.text.primary}`}>Join Existing Room</h2>
           <form onSubmit={handleJoin} className="space-y-4">
@@ -121,12 +120,12 @@ const Login: React.FC<LoginProps> = (props) => {
               label="Room Code"
               placeholder="Enter 4-letter Room Code"
               value={roomInput}
-              onChange={(e) => setRoomInput(e.target.value)} // Auto uppercase
+              onChange={(e) => setRoomInput(e.target.value)}
               isValid={roomInput.length === 0 ? null : validateRoomCode(roomInput)}
               errorMessage="Room code must be 4 letters"
             />
             <Input
-              id="user_input_join" // Unique ID if needed, though label association is key
+              id="user_input_join"
               label="Your Name"
               placeholder="Enter Your Name"
               value={userInput}
@@ -145,15 +144,14 @@ const Login: React.FC<LoginProps> = (props) => {
           </form>
         </div>
 
-        {/* Create Room Form */}
         <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card}`}>
           <h2 className={`text-xl font-semibold mb-4 ${theme.text.primary}`}>Create New Room</h2>
           <form onSubmit={handleCreate} className="space-y-4">
             <Input
-              id="user_input_create" // Unique ID
+              id="user_input_create"
               label="Your Name"
               placeholder="Enter Your Name"
-              value={userInput} // Shared user input state
+              value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               isValid={userInput.length === 0 ? null : validateUsername(userInput)}
               errorMessage="Name cannot be empty"

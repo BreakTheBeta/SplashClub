@@ -4,7 +4,12 @@ import Button from "../components/Button"; // Your custom Button
 import Input from "../components/Input"; // Your custom Input
 import Toast from "../components/Toast"; // Your custom Toast
 import { useTheme } from "../theme/ThemeContext";
-import type { PageState, WsMessageData } from "../types"; // Import shared types
+import type { PageState } from "../types"; // Import shared types
+import type { 
+  SubmitAnswerClientMessage,
+  ErrorServerMessage,
+  AskVoteServerMessage
+} from "../generated/sockets_types";
 import useWebSocket from "react-use-websocket";
 import { WS_URL } from "../const";
 
@@ -31,38 +36,21 @@ const Prompt: React.FC<PromptProps> = (props) => {
   useEffect(() => {
     if (lastMessage !== null) {
       try {
-        // The old code used message['data'], new hook provides it directly
-        const data: WsMessageData = JSON.parse(lastMessage.data as string);
-        // console.log('Prompt received message:', data);
-
-        // Optional: Add room check if your backend might send messages for other rooms
-        // if (data.room && data.room !== props.room) {
-        //   return;
-        // }
+        const data = JSON.parse(lastMessage.data as string) as (ErrorServerMessage | AskVoteServerMessage);
 
         if (data.type === "error") {
           setError(data.message || "An unexpected error occurred.");
           setShowError(true);
           setWaiting(false); // Re-enable form if submission caused an error
-        } else if (
-          data.type === "ask_vote"
-        ) {
-          // Assuming a specific type for transition.
-          // The old code transitioned on any non-error message.
-          // It's better to be specific.
-          // Ensure answers are present if this message type implies they should be
-          // if (data.room === props.room && data.answers) {
+        } else if (data.type === "ask_vote") {
           props.setCurPage({
             page: "vote",
             user: props.user,
             room: props.room,
-            prompt: props.prompt, // Pass the prompt along to the vote page
-            answers: data.answers || {"prompt": "", "answers": []}, // Ensure answers is an array
+            prompt: props.prompt,
+            answers: data.answers
           });
-          // }
         }
-        // Else: unhandled message type for Prompt component specifically
-        // console.warn("Unhandled message type in Prompt:", data.type);
       } catch (e) {
         console.error(
           "Failed to parse WebSocket message in Prompt:",
@@ -86,14 +74,13 @@ const Prompt: React.FC<PromptProps> = (props) => {
     if (!validateAnswer()) return;
 
     setWaiting(true);
-    sendMessage(
-      JSON.stringify({
-        type: "submit_answer", // Or "submit_prompt" if your backend expects that exact type
-        room: props.room,
-        user: props.user,
-        answer: answer.trim(),
-      })
-    );
+    const message: SubmitAnswerClientMessage = {
+      type: "submit_answer",
+      room: props.room,
+      user: props.user,
+      answer: answer.trim()
+    };
+    sendMessage(JSON.stringify(message));
     setanswered(true);
   }
 
@@ -156,6 +143,7 @@ const Prompt: React.FC<PromptProps> = (props) => {
             isValid={
               answer.trim().length === 0 ? null : answer.trim().length > 0
             }
+            errorMessage="Answer cannot be empty"
           />
           <Button
             type="submit"
