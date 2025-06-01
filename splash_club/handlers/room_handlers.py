@@ -6,10 +6,12 @@ import websockets
 from .base_handler import BaseHandler
 from splash_club.contracts import (
     CreateRoomClientMessage, JoinRoomClientMessage, ReJoinRoomClientMessage,
-    JoinRoomSuccessServerMessage, ReJoinRoomSuccessServerMessage, RoomNotFoundServerMessage
+    JoinRoomSuccessServerMessage, ReJoinRoomSuccessServerMessage, RoomNotFoundServerMessage,
+    AskPromptServerMessage, AskVoteServerMessage, ShowResultsServerMessage, AnswerOptionForVote, ResultDetail
 )
-from splash_club.game import PromptRoom, JoinReturnCodes
+from splash_club.game import PromptRoom, JoinReturnCodes, State, InteractReturnCodes
 from splash_club.connection_manager import ConnectionManager
+from pydantic import ValidationError
 
 
 class CreateRoomHandler(BaseHandler):
@@ -121,6 +123,9 @@ class ReJoinRoomHandler(BaseHandler):
                 # Notify all users in room
                 await self.notify_room_users_updated(room_id)
                 
+                # NEW: Send game state synchronization messages
+                await self._send_game_state_sync(websocket, room_id, user_id)
+                
                 logging.info(f"User '{user_id}' rejoined room '{room_id}'")
                 return True
             elif ret_join == JoinReturnCodes.ROOM_NOT_FOUND:
@@ -135,3 +140,76 @@ class ReJoinRoomHandler(BaseHandler):
             logging.error(f"Error rejoining room '{message.room}' for user '{message.user}': {e}")
             await self.send_generic_error(websocket, "Failed to rejoin room", message.request_id)
             return False
+    
+    async def _send_game_state_sync(self, websocket: websockets.ServerConnection, room_id: str, user_id: str) -> None:
+        """Send appropriate game state messages to sync the rejoining client."""
+        try:
+            # Get current game state
+            game_state = self.game_gateway.get_room_state(room_id, user_id)
+            if not game_state:
+                logging.error(f"Could not get room state for user '{user_id}' in room '{room_id}' during rejoin sync")
+                return
+                
+            ret_code, state_val, game_data = game_state
+            
+            if ret_code != InteractReturnCodes.SUCCESS:
+                logging.error(f"Failed to get room state for user '{user_id}' in room '{room_id}': {ret_code}")
+                return
+                
+            current_state = State(state_val) if state_val is not None else None
+            
+            if current_state == State.WAITING_TO_START:
+                # Client will stay on waiting page, no additional message needed
+                logging.info(f"User '{user_id}' rejoined room '{room_id}' in WAITING_TO_START state")
+                
+            elif current_state == State.COLLECTING_ANSWERS:
+                # Send prompt message to get client to prompt page
+                if isinstance(game_data, str):
+                    prompt_msg = AskPromptServerMessage(prompt=game_data)
+                    await self.connection_manager.safe_websocket_send(websocket, prompt_msg.model_dump_json())
+                    logging.info(f"Sent prompt sync to rejoining user '{user_id}' in room '{room_id}'")
+                else:
+                    logging.error(f"Unexpected prompt format for room '{room_id}' during rejoin: {type(game_data)}")
+                    
+            elif current_state == State.VOTING:
+                # Send voting options to get client to vote page
+                if isinstance(game_data, dict) and 'prompt' in game_data and 'answers' in game_data:
+                    try:
+                        answers_data = game_data.get('answers', [])
+                        prompt_text = game_data.get('prompt', '')
+                        
+                        valid_answers = [AnswerOptionForVote(**ans) for ans in answers_data]
+                        vote_msg = AskVoteServerMessage(prompt=prompt_text, answers=valid_answers)
+                        
+                        await self.connection_manager.safe_websocket_send(websocket, vote_msg.model_dump_json())
+                        logging.info(f"Sent vote sync to rejoining user '{user_id}' in room '{room_id}'")
+                        
+                    except (KeyError, ValidationError) as e:
+                        logging.error(f"Error preparing vote sync message for user '{user_id}' in room '{room_id}': {e}")
+                else:
+                    logging.error(f"Unexpected vote data format for room '{room_id}' during rejoin: {type(game_data)}")
+                    
+            elif current_state == State.SHOWING_RESULTS:
+                # Send results to get client to results page
+                if isinstance(game_data, list):
+                    try:
+                        valid_results = [ResultDetail(**res) for res in game_data]
+                        results_msg = ShowResultsServerMessage(results=valid_results)
+                        
+                        await self.connection_manager.safe_websocket_send(websocket, results_msg.model_dump_json())
+                        logging.info(f"Sent results sync to rejoining user '{user_id}' in room '{room_id}'")
+                        
+                    except (ValidationError, KeyError) as e:
+                        logging.error(f"Error preparing results sync message for user '{user_id}' in room '{room_id}': {e}")
+                else:
+                    logging.error(f"Unexpected results format for room '{room_id}' during rejoin: {type(game_data)}")
+                    
+            elif current_state == State.DONE:
+                # Game is over, client will stay on waiting/results page
+                logging.info(f"User '{user_id}' rejoined room '{room_id}' in DONE state")
+                
+            else:
+                logging.warning(f"Unknown game state '{current_state}' for room '{room_id}' during rejoin sync")
+                
+        except Exception as e:
+            logging.error(f"Error sending game state sync for user '{user_id}' in room '{room_id}': {e}")

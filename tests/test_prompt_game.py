@@ -22,10 +22,10 @@ class TestUtilityFunctions:
         room_id = _random_id()
         assert len(room_id) == GameGateway.NUM_ROOM_LETTERS
     
-    def test_random_id_lowercase(self):
-        """Test that random_id only contains lowercase letters"""
+    def test_random_id_uppercase(self):
+        """Test that random_id only contains uppercase letters"""
         room_id = _random_id()
-        assert room_id.islower()
+        assert room_id.isupper()
         assert room_id.isalpha()
     
     @patch("builtins.open", new_callable=mock_open, read_data="Question1\tAnswer1\nQuestion2\tAnswer2\n")

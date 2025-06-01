@@ -8,7 +8,9 @@ import type {
   StartRoomClientMessage,
   UserUpdateServerMessage,
   ErrorServerMessage,
-  AskPromptServerMessage
+  AskPromptServerMessage,
+  AskVoteServerMessage,
+  ShowResultsServerMessage
 } from '../generated/sockets_types';
 import useWebSocket from "react-use-websocket";
 import { WS_URL } from "../const";
@@ -39,7 +41,7 @@ const Waiting: React.FC<WaitingProps> = (props) => {
   useEffect(() => {
     if (lastMessage !== null) {
       try {
-        const data = JSON.parse(lastMessage.data as string) as (UserUpdateServerMessage | ErrorServerMessage | AskPromptServerMessage);
+        const data = JSON.parse(lastMessage.data as string) as (UserUpdateServerMessage | ErrorServerMessage | AskPromptServerMessage | AskVoteServerMessage | ShowResultsServerMessage);
         // console.log('Waiting received message:', data);
 
         if (data.type === 'user_update') {
@@ -65,6 +67,24 @@ const Waiting: React.FC<WaitingProps> = (props) => {
               prompt: data.prompt
             });
           // }
+        } else if (data.type === "ask_vote") {
+          // Handle rejoin during voting phase - transition to vote page
+          props.setCurPage({
+            page: "vote",
+            user: props.user,
+            room: props.room,
+            prompt: data.prompt,
+            answers: data.answers
+          });
+        } else if (data.type === "show_results") {
+          // Handle rejoin during results phase - transition to results page
+          props.setCurPage({
+            page: "results",
+            user: props.user,
+            room: props.room,
+            results: data.results,
+            prompt: "" // Results page might need prompt, but it's not in show_results message
+          });
         }
         // Else: unhandled message type for Waiting component specifically
         // console.warn("Unhandled message type in Waiting or already handled by App.tsx:", data.type);

@@ -31,7 +31,7 @@ export const useGameWebSocket = ({ roomId, onMessage, onReconnect }: UseGameWebS
         setReconnectAttempts(prev => prev + 1);
       }
     },
-    shouldReconnect: (closeEvent) => {
+    shouldReconnect: (_closeEvent) => {
       if (roomId && storedUserId) {
         return reconnectAttempts < 3;
       }
