@@ -13,7 +13,7 @@ test:
 	uv run pytest
 
 gen_types:
-	pydantic2ts --module ./jill_box/contracts.py --output client/src/generated/sockets_types.ts
+	pydantic2ts --module ./splash_club/contracts.py --output client/src/generated/sockets_types.ts
 
 
 
