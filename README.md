@@ -1,6 +1,7 @@
 # Splash Club
 
-![Splash Club Logo](./client/public/logo.png)
+<img src="./client/public/logo.png" alt="drawing" width="200"/>
+
 
 This is a fork and major modernization of the jill_box repo: https://github.com/axlan/jill_box. 
 
