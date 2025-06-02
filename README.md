@@ -1,6 +1,6 @@
 # Splash Club
 
-<img src="./client/public/logo.png" alt="drawing" width="200"/>
+<img src="./client/public/logo.png" alt="drawing" width="400"/>
 
 
 This is a fork and major modernization of the jill_box repo: https://github.com/axlan/jill_box. 
