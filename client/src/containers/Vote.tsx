@@ -19,13 +19,14 @@ interface VoteProps {
   room: string;
   prompt: string;    // The prompt text for this voting round
   answers: AnswerOptionForVote[];
+  already_voted: boolean;
 }
 
 const Vote: React.FC<VoteProps> = (props) => {
-  const [selected, setSelected] = useState<string>(""); // Index of the selected answer
+  const [selected, setSelected] = useState<string>(props.already_voted ? "true" : ""); // Index of the selected answer
   const [error, setError] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
-  const [waiting, setWaiting] = useState<boolean>(false); // True when vote submitted, waiting for others
+  const [waiting, setWaiting] = useState<boolean>(props.already_voted); // True when vote submitted, waiting for others
 
   const theme = useTheme();
 

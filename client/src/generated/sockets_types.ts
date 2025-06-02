@@ -38,6 +38,10 @@ export interface AskVoteServerMessage {
    * List of answers to vote on.
    */
   answers: AnswerOptionForVote[];
+  /**
+   * True if the player has already voted for an answer.
+   */
+  voted?: boolean;
 }
 /**
  * Base model for messages sent from Client to Server.

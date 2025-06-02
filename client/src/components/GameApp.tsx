@@ -159,6 +159,7 @@ const GameApp: React.FC = () => {
           room={curPage.room || "room empty"}
           answers={curPage.answers || [{'id': 'NO ID', 'text':"EMPTY ANSWERS"}]}
           prompt={curPage.prompt || "prompt empty"}
+          already_voted={curPage.already_voted || false}
         />;
       
       case "results":

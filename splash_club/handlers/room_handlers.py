@@ -186,18 +186,16 @@ class ReJoinRoomHandler(BaseHandler):
                 # Only send voting options if player hasn't already voted
                 if isinstance(game_data, dict) and 'prompt' in game_data and 'answers' in game_data:
                     try:
+                        print("PRINTING OUT GAME DATA", game_data)
                         player_has_voted = game_data.get('player_has_voted', False)
-                        if not player_has_voted:
-                            answers_data = game_data.get('answers', [])
-                            prompt_text = game_data.get('prompt', '')
-                            
-                            valid_answers = [AnswerOptionForVote(**ans) for ans in answers_data]
-                            vote_msg = AskVoteServerMessage(prompt=prompt_text, answers=valid_answers)
-                            
-                            await self.connection_manager.safe_websocket_send(websocket, vote_msg.model_dump_json())
-                            logging.info(f"Sent vote sync to rejoining user '{user_id}' in room '{room_id}' (not yet voted)")
-                        else:
-                            logging.info(f"User '{user_id}' rejoined room '{room_id}' in VOTING state but has already voted")
+                        answers_data = game_data.get('answers', [])
+                        prompt_text = game_data.get('prompt', '')
+                        
+                        valid_answers = [AnswerOptionForVote(**ans) for ans in answers_data]
+                        vote_msg = AskVoteServerMessage(prompt=prompt_text, answers=valid_answers, voted=player_has_voted)
+                        
+                        await self.connection_manager.safe_websocket_send(websocket, vote_msg.model_dump_json())
+                        logging.info(f"Sent vote sync to rejoining user '{user_id}' in room '{room_id}' (not yet voted)")
                             
                     except (KeyError, ValidationError) as e:
                         logging.error(f"Error preparing vote sync message for user '{user_id}' in room '{room_id}': {e}")

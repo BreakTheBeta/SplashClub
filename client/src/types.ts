@@ -20,6 +20,7 @@ export interface PageState {
   answers?: Answer[];
   results?: any;
   already_answered?: boolean;
+  already_voted?: boolean;
 }
 
 // Common WebSocket message data structure (adjust as per your backend)

@@ -271,6 +271,9 @@ class PromptRoom(Room):
                 return (InteractReturnCodes.PLAYER_NOT_FOUND, self.state, {})
             # Include whether this specific player has already voted
             player_has_voted = player in self.votes
+            print("PRINTING OUT VOTES", self.votes)
+            print("PRINTING OUT PLAYER", player)
+            print("PRINTING OUT PLAYER HAS VOTED", player_has_voted)
             answers_data = {
                 'prompt': self.prompts[self.round][0], 
                 'answers': self.get_answers(player),

@@ -65,7 +65,7 @@ const Waiting: React.FC<WaitingProps> = (props) => {
               user: props.user,
               room: props.room,
               prompt: data.prompt,
-              already_answered: data.already_answered
+              already_answered: data.already_answered || false,
             });
           // }
         } else if (data.type === "ask_vote") {
@@ -75,7 +75,8 @@ const Waiting: React.FC<WaitingProps> = (props) => {
             user: props.user,
             room: props.room,
             prompt: data.prompt,
-            answers: data.answers
+            answers: data.answers,
+            already_voted: data.voted || false,
           });
         } else if (data.type === "show_results") {
           // Handle rejoin during results phase - transition to results page

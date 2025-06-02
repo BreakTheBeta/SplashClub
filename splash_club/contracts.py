@@ -98,6 +98,7 @@ class AskVoteServerMessage(BaseServerMessage):
     type: Literal["ask_vote"] = "ask_vote"
     prompt: str = Field(..., description="Original prompt")
     answers: List[AnswerOptionForVote] = Field(..., description="List of answers to vote on.")
+    voted: bool = Field(default=False, description="True if the player has already voted for an answer.")
 
 class ResultDetail(BaseModel):
     user: str = Field(..., description="ID of the answer.")
