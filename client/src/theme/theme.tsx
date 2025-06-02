@@ -84,9 +84,9 @@ export const gameshowTheme: ThemeColors = {
   errorBorder: "border-2 border-red-400 shadow-sm shadow-red-300/20",
   text: {
     primary: "text-white font-bold drop-shadow-md",
-    secondary: "text-amber-200 font-semibold drop-shadow-sm",
-    error: "text-red-200 font-semibold drop-shadow-sm",
-    accent: "text-yellow-300 font-bold drop-shadow-md"
+    secondary: "text-slate-200 font-semibold drop-shadow-sm",
+    error: "text-purple-700 font-semibold drop-shadow-md",
+    accent: "text-blue-200 font-bold drop-shadow-md"
   },
   background: {
     card: "bg-gradient-to-br from-slate-800 via-slate-900 to-blue-900 border-2 border-amber-400/30 shadow-2xl shadow-amber-500/20 backdrop-blur-sm",

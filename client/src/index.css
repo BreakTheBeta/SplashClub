@@ -74,6 +74,7 @@ body {
   animation: bounce-in 0.4s ease-out;
   border-radius: 12px;
   position: relative;
+  overflow: hidden;
 }
 
 .gameshow-card::before {
@@ -83,9 +84,9 @@ body {
   left: -2px;
   right: -2px;
   bottom: -2px;
-  background: linear-gradient(45deg, #fbbf24, #f59e0b, #d97706, #92400e, #fbbf24);
+  background: linear-gradient(45deg, #f0b020, #e8a317, #cd8a1f, #a86f1a, #f0b020);
   background-size: 400% 400%;
-  border-radius: 14px;
+  border-radius: 12px;
   z-index: -1;
   animation: shimmer 8s ease-in-out infinite;
   animation-delay: var(--shimmer-delay, 0s);

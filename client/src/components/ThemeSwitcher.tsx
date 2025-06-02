@@ -42,7 +42,8 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ setTheme, currentTheme })
   return (
     <button
       onClick={() => setTheme(getNextTheme())}
-      className={`fixed top-4 right-4 p-3 rounded-full font-bold text-sm shadow-lg transition-all duration-200 transform hover:scale-110
+      className={`fixed top-4 right-4 p-3 rounded-full font-bold text-sm shadow-lg transition-all duration-200 transform hover:scale-110 z-50
+        min-h-12 min-w-12 sm:min-h-auto sm:min-w-auto
         ${currentTheme === gameshowTheme 
           ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-black shadow-amber-500/50' 
           : currentTheme === darkTheme 
@@ -51,7 +52,7 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ setTheme, currentTheme })
         }`}
       title={`Switch to ${getNextTheme() === defaultTheme ? 'Default' : getNextTheme() === darkTheme ? 'Dark' : 'Gameshow'} theme`}
     >
-      <div className="flex items-center gap-1">
+      <div className="flex items-center justify-center gap-1">
         <span className="text-lg">{getThemeIcon()}</span>
         <span className="hidden sm:inline">{getThemeName()}</span>
       </div>

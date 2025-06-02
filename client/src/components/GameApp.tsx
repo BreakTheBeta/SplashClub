@@ -98,6 +98,20 @@ const GameApp: React.FC = () => {
     }
   }, [roomId, navigate]);
 
+  // Handle URL changes - reset state when roomId changes
+  useEffect(() => {
+    // Reset rejoin attempt flag when roomId changes
+    hasAttemptedRejoin.current = false;
+    
+    // If we're navigating away from a room (roomId becomes undefined), reset to login
+    if (!roomId) {
+      setCurPage({ page: "login" });
+      // Don't clear stored user ID here - let the user stay logged in
+      // clearUserId();
+      // setStoredUserId(null);
+    }
+  }, [roomId]);
+
   // Handle room rejoin attempt
   useEffect(() => {
     if (!roomId || !storedUserId || readyState !== ReadyState.OPEN || hasAttemptedRejoin.current) {
@@ -191,9 +205,7 @@ const GameApp: React.FC = () => {
   return (
     <ThemeProvider value={theme}>
       <div id="root" className={`flex flex-col items-center justify-center min-h-screen px-4 ${theme.background.page}`}>
-        <div className="absolute top-4 right-4">
-          <ThemeSwitcher setTheme={setTheme} currentTheme={theme} />
-        </div>
+        <ThemeSwitcher setTheme={setTheme} currentTheme={theme} />
         <div className={`w-full max-w-4xl mx-auto flex justify-center px-4 py-8 ${theme.background.card} ${theme.text.primary} ${isGameshowTheme ? 'gameshow-card rounded-xl' : 'rounded-lg'}`}>
           {readyState === ReadyState.OPEN ? renderPage() : (
             <div className="text-center">
