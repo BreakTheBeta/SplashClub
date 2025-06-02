@@ -4,6 +4,7 @@ import Button from "../components/Button"; // Your custom Button
 import Input from "../components/Input"; // Your custom Input
 import Toast from "../components/Toast"; // Your custom Toast
 import { useTheme } from "../theme/ThemeContext";
+import { gameshowTheme } from '../theme/theme';
 import type { PageState } from "../types"; // Import shared types
 import type { 
   SubmitAnswerClientMessage,
@@ -31,6 +32,7 @@ const Prompt: React.FC<PromptProps> = (props) => {
   const [selectedChoice, setSelectedChoice] = useState("");
 
   const theme = useTheme();
+  const isGameshowTheme = theme === gameshowTheme;
 
   const { sendMessage, lastMessage } = useWebSocket(WS_URL, {
     share: true, // Important for sharing the connection if other components use it
@@ -98,12 +100,23 @@ const Prompt: React.FC<PromptProps> = (props) => {
 
   if (answered) {
     return (
-      <div className={`container mx-auto px-4 py-8 ${theme.background.page}`}>
+      <div className={`container mx-auto px-4 py-8`}>
+        {isGameshowTheme && (
+          <div className="text-center mb-8">
+            <h1 className="gameshow-title text-4xl md:text-6xl mb-4">
+              ✅ SUBMITTED! ✅
+            </h1>
+            <p className={`text-xl md:text-2xl ${theme.text.secondary} font-semibold`}>
+              WAITING FOR OTHER PLAYERS!
+            </p>
+          </div>
+        )}
+        
         <div
-          className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} max-w-lg mx-auto`}
+          className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} max-w-lg mx-auto ${isGameshowTheme ? 'gameshow-card' : ''}`}
         >
           <h2
-            className={`text-xl font-semibold mb-4 text-center ${theme.text.primary}`}
+            className={`text-xl font-semibold mb-4 text-center ${theme.text.primary} ${isGameshowTheme ? 'gameshow-title text-2xl' : ''}`}
           >
             Answer Submitted!
             <br></br>
@@ -115,12 +128,23 @@ const Prompt: React.FC<PromptProps> = (props) => {
   }
 
   return (
-    <div className={`container mx-auto px-4 py-8 ${theme.background.page}`}>
+    <div className={`container mx-auto px-4 py-8`}>
+      {isGameshowTheme && (
+        <div className="text-center mb-8">
+          <h1 className="gameshow-title text-4xl md:text-6xl mb-4">
+            ✏️ ANSWER TIME! ✏️
+          </h1>
+          <p className={`text-xl md:text-2xl ${theme.text.secondary} font-semibold`}>
+            FILL IN THE BLANK!
+          </p>
+        </div>
+      )}
+      
       <div
-        className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} max-w-lg mx-auto`}
+        className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} max-w-lg mx-auto ${isGameshowTheme ? 'gameshow-card' : ''}`}
       >
         <h2
-          className={`text-xl font-semibold mb-4 text-center ${theme.text.primary}`}
+          className={`text-xl font-semibold mb-4 text-center ${theme.text.primary} ${isGameshowTheme ? 'gameshow-title text-2xl' : ''}`}
         >
           Fill in the blank
         </h2>
@@ -131,7 +155,7 @@ const Prompt: React.FC<PromptProps> = (props) => {
             theme.background.highlight || ""
           } rounded-r-md`}
         >
-          <p className={`italic ${theme.text.secondary} text-lg`}>
+          <p className={`italic ${theme.text.secondary} text-lg ${isGameshowTheme ? 'font-semibold text-xl' : ''}`}>
             {props.prompt}
           </p>
         </div>

@@ -1,6 +1,7 @@
 // src/pages/Results.tsx
 import React, { useState, useEffect } from "react";
 import { useTheme } from '../theme/ThemeContext';
+import { gameshowTheme } from '../theme/theme';
 // import Button from "../components/Button"; // Uncomment if you add buttons like "Play Again"
 import Toast from "../components/Toast";
 import useWebSocket from "react-use-websocket";
@@ -29,6 +30,7 @@ const Results: React.FC<ResultsProps> = (props) => {
   const [error, setError] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
   const theme = useTheme();
+  const isGameshowTheme = theme === gameshowTheme;
 
   const { lastMessage } = useWebSocket(WS_URL, {
     share: true,
@@ -118,9 +120,20 @@ const Results: React.FC<ResultsProps> = (props) => {
 
   // If currentResults is available, render the main content
   return (
-    <div className={`container mx-auto px-4 py-8 ${theme.background.page}`}>
-      <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} max-w-lg mx-auto`}>
-        <h2 className={`text-2xl font-bold mb-6 text-center ${theme.text.primary}`}>Results</h2>
+    <div className={`container mx-auto px-4 py-8`}>
+      {isGameshowTheme && (
+        <div className="text-center mb-8">
+          <h1 className="gameshow-title text-4xl md:text-6xl mb-4">
+            🏆 RESULTS! 🏆
+          </h1>
+          <p className={`text-xl md:text-2xl ${theme.text.secondary} font-semibold`}>
+            SEE HOW YOU SCORED!
+          </p>
+        </div>
+      )}
+      
+      <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} max-w-lg mx-auto ${isGameshowTheme ? 'gameshow-card' : ''}`}>
+        <h2 className={`text-2xl font-bold mb-6 text-center ${theme.text.primary} ${isGameshowTheme ? 'gameshow-title text-3xl' : ''}`}>Results</h2>
 
         {/* <div className="mb-6">
           <h3 className={`text-xl font-semibold mb-2 ${theme.text.primary}`}>The correct answer was:</h3>
@@ -138,15 +151,15 @@ const Results: React.FC<ResultsProps> = (props) => {
         )} */}
 
         <div className="mb-6">
-          <h3 className={`text-lg font-semibold mb-2 ${theme.text.primary}`}>Earned This Round</h3>
+          <h3 className={`text-lg font-semibold mb-2 ${theme.text.primary} ${isGameshowTheme ? 'gameshow-title text-xl' : ''}`}>Earned This Round</h3>
           <ul className={`${theme.border} border rounded-md divide-y ${theme.success || 'divide-gray-200'} ${theme.background.card}`}>
             {currentResults.map((result) => (
               <li
                 key={`earned-${result.user}`}
-                className={`px-4 py-2 flex justify-between items-center ${theme.text.primary}`}
+                className={`px-4 py-2 flex justify-between items-center ${theme.text.primary} ${isGameshowTheme ? 'font-semibold text-lg' : ''}`}
               >
                 <span>{result.user}</span>
-                <span className="font-medium">{result.score} points</span>
+                <span className={`font-medium ${isGameshowTheme ? 'font-bold text-xl' : ''}`}>{result.score} points</span>
               </li>
             ))}
           </ul>
@@ -171,12 +184,12 @@ const Results: React.FC<ResultsProps> = (props) => {
 
         {!gameOver && (
           <div className="text-center text-sm mt-4">
-            <p className={`${theme.text.secondary} italic`}>Waiting for the next round...</p>
+            <p className={`${theme.text.secondary} italic ${isGameshowTheme ? 'font-semibold text-lg' : ''}`}>Waiting for the next round...</p>
           </div>
         )}
         {gameOver && (
            <div className="text-center text-sm mt-4">
-             <p className={`${theme.text.secondary} italic`}>Game Over! Thanks for playing.</p>
+             <p className={`${theme.text.secondary} italic ${isGameshowTheme ? 'font-semibold text-lg' : ''}`}>Game Over! Thanks for playing.</p>
              {/* Example:
              <Button
                onClick={() => {

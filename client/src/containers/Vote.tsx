@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import Button from "../components/Button"; // Your custom Button
 import Toast from "../components/Toast";   // Your custom Toast
 import { useTheme } from "../theme/ThemeContext";
+import { gameshowTheme } from '../theme/theme';
 import type { PageState } from "../types"; // Import shared types
 import type { 
   SubmitVoteClientMessage,
@@ -29,6 +30,7 @@ const Vote: React.FC<VoteProps> = (props) => {
   const [waiting, setWaiting] = useState<boolean>(props.already_voted); // True when vote submitted, waiting for others
 
   const theme = useTheme();
+  const isGameshowTheme = theme === gameshowTheme;
 
   const { sendMessage, lastMessage } = useWebSocket(WS_URL, {
     share: true, // Important for sharing the connection
@@ -99,12 +101,23 @@ const Vote: React.FC<VoteProps> = (props) => {
   };
 
   return (
-    <div className={`container mx-auto px-4 py-8 ${theme.background.page}`}>
+    <div className={`container mx-auto px-4 py-8`}>
+      {isGameshowTheme && (
+        <div className="text-center mb-8">
+          <h1 className="gameshow-title text-4xl md:text-6xl mb-4">
+            🗳️ VOTE TIME! 🗳️
+          </h1>
+          <p className={`text-xl md:text-2xl ${theme.text.secondary} font-semibold`}>
+            CHOOSE THE BEST ANSWER!
+          </p>
+        </div>
+      )}
+      
       <div
-        className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} max-w-lg mx-auto`}
+        className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} max-w-lg mx-auto ${isGameshowTheme ? 'gameshow-card' : ''}`}
       >
         <h2
-          className={`text-xl font-semibold mb-4 text-center ${theme.text.primary}`}
+          className={`text-xl font-semibold mb-4 text-center ${theme.text.primary} ${isGameshowTheme ? 'gameshow-title text-2xl' : ''}`}
         >
           Choose the best answer
         </h2>
@@ -115,7 +128,7 @@ const Vote: React.FC<VoteProps> = (props) => {
             theme.background.highlight || "bg-gray-100 dark:bg-gray-700" // Fallback highlight
           } rounded-r-md`}
         >
-          <p className={`italic ${theme.text.secondary} text-lg`}>
+          <p className={`italic ${theme.text.secondary} text-lg ${isGameshowTheme ? 'font-semibold text-xl' : ''}`}>
             {props.prompt}
           </p>
         </div>
@@ -139,7 +152,7 @@ const Vote: React.FC<VoteProps> = (props) => {
         {/* Waiting Indicator */}
         {waiting && (
           <div className="text-center mt-4">
-            <p className={`${theme.text.secondary} italic`}>
+            <p className={`${theme.text.secondary} italic ${isGameshowTheme ? 'font-semibold text-lg' : ''}`}>
               {selected !== "" ? "Vote submitted! Waiting for other players..." : "Submitting vote..."}
             </p>
           </div>
