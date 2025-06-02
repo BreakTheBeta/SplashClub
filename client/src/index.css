@@ -1,7 +1,7 @@
-@import "tailwindcss";
-
 /* Import a bold, chunky font that screams early 2000s gameshow */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@400;600;700;800&display=swap');
+
+@import "tailwindcss";
 
 /* Base font settings */
 :root {
