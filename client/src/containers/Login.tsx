@@ -31,12 +31,6 @@ const Login: React.FC<LoginProps> = (props) => {
   const theme = useTheme();
   const isGameshowTheme = theme === gameshowTheme;
 
-  // Generate random delays for shimmer animations
-  const [randomDelays] = useState(() => ({
-    card1: Math.random() * 8, // Random delay between 0-8 seconds
-    card2: Math.random() * 8, // Random delay between 0-8 seconds
-  }));
-
   useEffect(() => {
     if (lastMessage !== null) {
       try {
@@ -132,7 +126,6 @@ const Login: React.FC<LoginProps> = (props) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div 
           className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} ${isGameshowTheme ? 'gameshow-card' : ''}`}
-          style={isGameshowTheme ? { '--shimmer-delay': `${randomDelays.card1}s` } as React.CSSProperties : undefined}
         >
           <h2 className={`text-xl font-semibold mb-4 ${theme.text.primary} ${isGameshowTheme ? 'gameshow-title text-2xl' : ''}`}>
             Join Existing Room
@@ -170,7 +163,6 @@ const Login: React.FC<LoginProps> = (props) => {
 
         <div 
           className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} ${isGameshowTheme ? 'gameshow-card' : ''}`}
-          style={isGameshowTheme ? { '--shimmer-delay': `${randomDelays.card2}s` } as React.CSSProperties : undefined}
         >
           <h2 className={`text-xl font-semibold mb-4 ${theme.text.primary} ${isGameshowTheme ? 'gameshow-title text-2xl' : ''}`}>
             Create New Room

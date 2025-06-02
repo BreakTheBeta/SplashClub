@@ -18,19 +18,18 @@ body {
   margin: 0;
 }
 
-/* Gameshow-style animated background effect - slowed down significantly */
-@keyframes shimmer {
-  0% { background-position: 0% 0; }
-  50% { background-position: 100% 0; }
-  100% { background-position: 0% 0; }
-}
-
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.3); }
   50% { box-shadow: 0 0 15px rgba(251, 191, 36, 0.5), 0 0 20px rgba(251, 191, 36, 0.3); }
 }
 
+/* Reduced bounce animation for mobile */
 @keyframes bounce-in {
+  0% { transform: scale(0.98); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bounce-in-desktop {
   0% { transform: scale(0.95) rotate(-0.5deg); opacity: 0; }
   50% { transform: scale(1.02) rotate(0.5deg); opacity: 0.9; }
   100% { transform: scale(1) rotate(0deg); opacity: 1; }
@@ -57,7 +56,7 @@ body {
   left: 100%;
 }
 
-/* Dramatic text effects for headers - toned down pulse */
+/* Dramatic text effects for headers - mobile optimized */
 .gameshow-title {
   font-family: 'Orbitron', monospace;
   font-weight: 900;
@@ -67,14 +66,40 @@ body {
     2px 2px 0px #000,
     4px 4px 8px rgba(251, 191, 36, 0.5),
     0 0 20px rgba(251, 191, 36, 0.3);
-  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+/* Mobile: Use simpler animation */
+@media (max-width: 768px) {
+  .gameshow-title {
+    animation: none; /* Disable glow animation on mobile */
+  }
+}
+
+/* Desktop: Use full glow effect */
+@media (min-width: 769px) {
+  .gameshow-title {
+    animation: pulse-glow 4s ease-in-out infinite;
+  }
 }
 
 .gameshow-card {
-  animation: bounce-in 0.4s ease-out;
   border-radius: 12px;
   position: relative;
   overflow: hidden;
+}
+
+/* Mobile: Simple bounce without rotation */
+@media (max-width: 768px) {
+  .gameshow-card {
+    animation: bounce-in 0.3s ease-out;
+  }
+}
+
+/* Desktop: Full bounce effect */
+@media (min-width: 769px) {
+  .gameshow-card {
+    animation: bounce-in-desktop 0.4s ease-out;
+  }
 }
 
 .gameshow-card::before {
@@ -85,11 +110,8 @@ body {
   right: -2px;
   bottom: -2px;
   background: linear-gradient(45deg, #f0b020, #e8a317, #cd8a1f, #a86f1a, #f0b020);
-  background-size: 400% 400%;
   border-radius: 12px;
   z-index: -1;
-  animation: shimmer 8s ease-in-out infinite;
-  animation-delay: var(--shimmer-delay, 0s);
 }
 
 /* Special loading spinner for gameshow theme */
@@ -104,6 +126,16 @@ body {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .gameshow-title,
+  .gameshow-card,
+  .gameshow-card::before,
+  .gameshow-card::after {
+    animation: none !important;
+  }
 }
 
 /* Any custom styles that can't be handled by Tailwind can stay here */
