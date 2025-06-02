@@ -4,6 +4,7 @@ import Button from "../components/Button";
 import Input from "../components/Input";
 import Toast from "../components/Toast";
 import { useTheme } from '../theme/ThemeContext';
+import { gameshowTheme } from '../theme/theme';
 import type { PageState } from '../types';
 import type { 
   JoinRoomClientMessage, 
@@ -28,6 +29,7 @@ const Login: React.FC<LoginProps> = (props) => {
   });
 
   const theme = useTheme();
+  const isGameshowTheme = theme === gameshowTheme;
 
   useEffect(() => {
     if (lastMessage !== null) {
@@ -110,9 +112,22 @@ const Login: React.FC<LoginProps> = (props) => {
 
   return (
     <div className={`container mx-auto px-4 py-8`}>
+      {isGameshowTheme && (
+        <div className="text-center mb-8">
+          <h1 className="gameshow-title text-4xl md:text-6xl mb-4">
+            🎬 SPLASH CLUB 🎬
+          </h1>
+          <p className={`text-xl md:text-2xl ${theme.text.secondary} font-semibold`}>
+            THE ULTIMATE PARTY GAME EXPERIENCE!
+          </p>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card}`}>
-          <h2 className={`text-xl font-semibold mb-4 ${theme.text.primary}`}>Join Existing Room</h2>
+        <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} ${isGameshowTheme ? 'gameshow-card' : ''}`}>
+          <h2 className={`text-xl font-semibold mb-4 ${theme.text.primary} ${isGameshowTheme ? 'gameshow-title text-2xl' : ''}`}>
+            Join Existing Room
+          </h2>
           <form onSubmit={handleJoin} className="space-y-4">
             <Input
               autoFocus={true}
@@ -144,8 +159,10 @@ const Login: React.FC<LoginProps> = (props) => {
           </form>
         </div>
 
-        <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card}`}>
-          <h2 className={`text-xl font-semibold mb-4 ${theme.text.primary}`}>Create New Room</h2>
+        <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} ${isGameshowTheme ? 'gameshow-card' : ''}`}>
+          <h2 className={`text-xl font-semibold mb-4 ${theme.text.primary} ${isGameshowTheme ? 'gameshow-title text-2xl' : ''}`}>
+            Create New Room
+          </h2>
           <form onSubmit={handleCreate} className="space-y-4">
             <Input
               id="user_input_create"

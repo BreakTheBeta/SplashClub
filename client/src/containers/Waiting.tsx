@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import Button from "../components/Button";
 import Toast from "../components/Toast";
 import { useTheme } from '../theme/ThemeContext';
+import { gameshowTheme } from '../theme/theme';
 import type { PageState } from '../types';
 import type { 
   StartRoomClientMessage,
@@ -26,6 +27,7 @@ const Waiting: React.FC<WaitingProps> = (props) => {
   const [error, setError] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
   const theme = useTheme();
+  const isGameshowTheme = theme === gameshowTheme;
 
   const { sendMessage, lastMessage } = useWebSocket(WS_URL, {
     share: true,
@@ -115,24 +117,28 @@ const Waiting: React.FC<WaitingProps> = (props) => {
 
   return (
     <div className={`container mx-auto px-4 py-8 ${theme.background.page}`}>
-      <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} max-w-lg mx-auto`}>
-        <h2 className={`text-xl font-semibold mb-4 text-center ${theme.text.primary}`}>
+      <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} max-w-lg mx-auto ${isGameshowTheme ? 'gameshow-card' : ''}`}>
+        <h2 className={`text-xl font-semibold mb-4 text-center ${theme.text.primary} ${isGameshowTheme ? 'gameshow-title text-3xl' : ''}`}>
           Waiting to start room <span className="font-bold">{props.room}</span>
         </h2>
 
         <div className="mb-6 text-center">
-          <p className={`${theme.text.secondary} text-lg`}>Welcome, {props.user}</p>
+          <p className={`${theme.text.secondary} text-lg ${isGameshowTheme ? 'font-bold text-xl' : ''}`}>
+            Welcome, {props.user}
+          </p>
         </div>
 
         <div className="mb-6">
-          <h3 className={`text-lg font-semibold mb-2 ${theme.text.primary}`}>Players:</h3>
+          <h3 className={`text-lg font-semibold mb-2 ${theme.text.primary} ${isGameshowTheme ? 'gameshow-title text-xl' : ''}`}>
+            Players:
+          </h3>
           <ul className={`${theme.border} border rounded-md divide-y ${theme.background.highlight}`}>
             {users.map((player, index) => (
               <li
                 key={`player-${index}`}
-                className={`px-4 py-2 ${theme.text.primary}`}
+                className={`px-4 py-2 ${theme.text.primary} ${isGameshowTheme ? 'font-semibold text-lg' : ''}`}
               >
-                {player} {player === props.user && <span className={`${theme.text.accent} ml-2`}>(you)</span>}
+                {player} {player === props.user && <span className={`${theme.text.accent} ml-2 ${isGameshowTheme ? 'font-bold' : ''}`}>(you)</span>}
               </li>
             ))}
           </ul>
@@ -167,7 +173,7 @@ const Waiting: React.FC<WaitingProps> = (props) => {
         </Button>
 
         {!validateStart() && users.length > 0 && ( // Show message only if there's at least one player (usually 'you')
-          <p className={`text-sm mt-2 ${theme.text.secondary} italic`}>
+          <p className={`text-sm mt-2 ${theme.text.secondary} italic ${isGameshowTheme ? 'font-semibold' : ''}`}>
             At least 3 players are needed to start the game
           </p>
         )}

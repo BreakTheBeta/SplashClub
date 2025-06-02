@@ -70,3 +70,28 @@ export const darkTheme: ThemeColors = {
     highlight: "bg-gray-700"
   },
 };
+
+// Early 2000s British Gameshow Theme - Think "Who Wants to Be a Millionaire" meets "The Weakest Link"
+export const gameshowTheme: ThemeColors = {
+  primary: "bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 shadow-lg shadow-amber-500/50",
+  primaryHover: "hover:from-yellow-300 hover:via-amber-400 hover:to-orange-400 hover:shadow-xl hover:shadow-amber-500/60 transform hover:scale-105 transition-all duration-200",
+  secondary: "bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 shadow-md shadow-blue-500/30",
+  secondaryHover: "hover:from-blue-500 hover:via-blue-600 hover:to-indigo-700 hover:shadow-lg hover:shadow-blue-500/40 transform hover:scale-105 transition-all duration-200",
+  error: "bg-gradient-to-r from-red-600 via-red-700 to-red-800 shadow-md shadow-red-500/30",
+  success: "bg-gradient-to-r from-green-500 via-emerald-600 to-green-700 shadow-md shadow-green-500/30",
+  border: "border-2 border-amber-400 shadow-sm shadow-amber-300/20",
+  successBorder: "border-2 border-green-400 shadow-sm shadow-green-300/20",
+  errorBorder: "border-2 border-red-400 shadow-sm shadow-red-300/20",
+  text: {
+    primary: "text-white font-bold drop-shadow-md",
+    secondary: "text-amber-200 font-semibold drop-shadow-sm",
+    error: "text-red-200 font-semibold drop-shadow-sm",
+    accent: "text-yellow-300 font-bold drop-shadow-md"
+  },
+  background: {
+    card: "bg-gradient-to-br from-slate-800 via-slate-900 to-blue-900 border-2 border-amber-400/30 shadow-2xl shadow-amber-500/20 backdrop-blur-sm",
+    page: "bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900",
+    toast: "bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-800 shadow-lg shadow-purple-500/30",
+    highlight: "bg-gradient-to-r from-amber-500/20 via-yellow-400/20 to-orange-500/20 border border-amber-400/40"
+  },
+};

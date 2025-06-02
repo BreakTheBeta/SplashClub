@@ -7,7 +7,7 @@ import Vote from '../containers/Vote';
 import Results from '../containers/Results';
 import Waiting from '../containers/Waiting';
 import type { ThemeColors } from '../theme/theme';
-import { defaultTheme } from '../theme/theme';
+import { gameshowTheme } from '../theme/theme';
 import ThemeSwitcher from './ThemeSwitcher';
 import { ThemeProvider } from '../theme/ThemeContext';
 import type { PageState, WsMessageData } from '../types';
@@ -16,7 +16,7 @@ import { saveUserId, getUserId, clearUserId } from '../utils/storage';
 
 const GameApp: React.FC = () => {
   const [curPage, setCurPage] = useState<PageState>({ page: "login" });
-  const [theme, setTheme] = useState<ThemeColors>(defaultTheme);
+  const [theme, setTheme] = useState<ThemeColors>(gameshowTheme);
   const [storedUserId, setStoredUserId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
@@ -186,14 +186,31 @@ const GameApp: React.FC = () => {
     [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
   }[readyState];
 
+  const isGameshowTheme = theme === gameshowTheme;
+
   return (
     <ThemeProvider value={theme}>
       <div id="root" className={`flex flex-col items-center justify-center min-h-screen px-4 ${theme.background.page}`}>
         <div className="absolute top-4 right-4">
           <ThemeSwitcher setTheme={setTheme} currentTheme={theme} />
         </div>
-        <div className={`w-full max-w-4xl mx-auto flex justify-center px-4 py-8 ${theme.background.card} ${theme.text.primary}`}>
-          {readyState === ReadyState.OPEN ? renderPage() : <div>Connecting to server... ({connectionStatus})</div>}
+        <div className={`w-full max-w-4xl mx-auto flex justify-center px-4 py-8 ${theme.background.card} ${theme.text.primary} ${isGameshowTheme ? 'gameshow-card rounded-xl' : 'rounded-lg'}`}>
+          {readyState === ReadyState.OPEN ? renderPage() : (
+            <div className="text-center">
+              <h2 className={`text-xl mb-4 ${isGameshowTheme ? 'gameshow-title' : ''}`}>
+                {isReconnecting && roomId ? `Reconnecting to room ${roomId}...` : 'Connecting to server...'}
+              </h2>
+              <div className={`rounded-full h-8 w-8 border-b-2 border-current mx-auto ${isGameshowTheme ? 'gameshow-spinner' : 'animate-spin'}`}></div>
+              <p className="mt-4 text-sm opacity-75">
+                {connectionStatus} {isReconnecting && `(Attempt ${reconnectAttempts} of 3)`}
+              </p>
+              {storedUserId && (
+                <p className="mt-2 text-xs opacity-50">
+                  User: {storedUserId}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </ThemeProvider>
