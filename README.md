@@ -1,5 +1,7 @@
 # Splash Club
 
+![Splash Club Logo](./client/public/logo.png)
+
 This is a fork and major modernization of the jill_box repo: https://github.com/axlan/jill_box. 
 
 This demo game is similar to Fibbage, where players create fake answers to prompts and try to guess the real ones.
