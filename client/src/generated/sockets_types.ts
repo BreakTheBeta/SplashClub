@@ -22,6 +22,10 @@ export interface AskPromptServerMessage {
    * The prompt/question for the current round.
    */
   prompt: string;
+  /**
+   * True if the player has already submitted an answer for this prompt.
+   */
+  already_answered?: boolean | null;
 }
 export interface AskVoteServerMessage {
   response_to_request_id?: string | null;

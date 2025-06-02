@@ -29,14 +29,21 @@ class GameStateManager:
                 logging.error(f"Could not get room state for room '{room_id}'")
                 return
                 
-            _, _, prompt_json = game_state
+            _, _, game_data = game_state
             
-            if isinstance(prompt_json, str):
-                prompt_msg = AskPromptServerMessage(prompt=prompt_json)
+            # Handle the new dictionary format for COLLECTING_ANSWERS state
+            if isinstance(game_data, dict) and 'prompt' in game_data:
+                prompt_text = game_data['prompt']
+                prompt_msg = AskPromptServerMessage(prompt=prompt_text)
                 await self.connection_manager.broadcast_to_room(room_id, prompt_msg)
-                logging.info(f"Sent prompt to room '{room_id}': {prompt_json[:50]}...")
+                logging.info(f"Sent prompt to room '{room_id}': {prompt_text[:50]}...")
+            elif isinstance(game_data, str):
+                # Fallback for legacy string format (if any)
+                prompt_msg = AskPromptServerMessage(prompt=game_data)
+                await self.connection_manager.broadcast_to_room(room_id, prompt_msg)
+                logging.info(f"Sent prompt to room '{room_id}': {game_data[:50]}...")
             else:
-                logging.error(f"Unexpected prompt format for room '{room_id}': {type(prompt_json)}")
+                logging.error(f"Unexpected prompt format for room '{room_id}': {type(game_data)} - {game_data}")
                 
         except Exception as e:
             logging.error(f"Error handling prompt for room '{room_id}': {e}")

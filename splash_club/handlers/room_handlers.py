@@ -163,27 +163,42 @@ class ReJoinRoomHandler(BaseHandler):
                 logging.info(f"User '{user_id}' rejoined room '{room_id}' in WAITING_TO_START state")
                 
             elif current_state == State.COLLECTING_ANSWERS:
-                # Send prompt message to get client to prompt page
-                if isinstance(game_data, str):
-                    prompt_msg = AskPromptServerMessage(prompt=game_data)
-                    await self.connection_manager.safe_websocket_send(websocket, prompt_msg.model_dump_json())
-                    logging.info(f"Sent prompt sync to rejoining user '{user_id}' in room '{room_id}'")
+                # Handle the new dictionary format for COLLECTING_ANSWERS state
+                if isinstance(game_data, dict) and 'prompt' in game_data:
+                    player_has_answered = game_data.get('player_has_answered', False)
+                    prompt_text = game_data['prompt']
+                    
+                    # Always send the prompt message, but indicate if they've already answered
+                    prompt_message = AskPromptServerMessage(
+                        prompt=prompt_text,
+                        already_answered=player_has_answered
+                    )
+                    await self.connection_manager.safe_websocket_send(websocket, prompt_message.model_dump_json())
+                    
+                    if player_has_answered:
+                        logging.info(f"User '{user_id}' rejoined room '{room_id}' and has already submitted an answer")
+                    else:
+                        logging.info(f"User '{user_id}' rejoined room '{room_id}' and needs to submit an answer")
                 else:
                     logging.error(f"Unexpected prompt format for room '{room_id}' during rejoin: {type(game_data)}")
-                    
+                
             elif current_state == State.VOTING:
-                # Send voting options to get client to vote page
+                # Only send voting options if player hasn't already voted
                 if isinstance(game_data, dict) and 'prompt' in game_data and 'answers' in game_data:
                     try:
-                        answers_data = game_data.get('answers', [])
-                        prompt_text = game_data.get('prompt', '')
-                        
-                        valid_answers = [AnswerOptionForVote(**ans) for ans in answers_data]
-                        vote_msg = AskVoteServerMessage(prompt=prompt_text, answers=valid_answers)
-                        
-                        await self.connection_manager.safe_websocket_send(websocket, vote_msg.model_dump_json())
-                        logging.info(f"Sent vote sync to rejoining user '{user_id}' in room '{room_id}'")
-                        
+                        player_has_voted = game_data.get('player_has_voted', False)
+                        if not player_has_voted:
+                            answers_data = game_data.get('answers', [])
+                            prompt_text = game_data.get('prompt', '')
+                            
+                            valid_answers = [AnswerOptionForVote(**ans) for ans in answers_data]
+                            vote_msg = AskVoteServerMessage(prompt=prompt_text, answers=valid_answers)
+                            
+                            await self.connection_manager.safe_websocket_send(websocket, vote_msg.model_dump_json())
+                            logging.info(f"Sent vote sync to rejoining user '{user_id}' in room '{room_id}' (not yet voted)")
+                        else:
+                            logging.info(f"User '{user_id}' rejoined room '{room_id}' in VOTING state but has already voted")
+                            
                     except (KeyError, ValidationError) as e:
                         logging.error(f"Error preparing vote sync message for user '{user_id}' in room '{room_id}': {e}")
                 else:

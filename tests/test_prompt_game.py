@@ -268,7 +268,31 @@ class TestPromptRoom:
         code, state, data = room_with_players.get_room_state("alice")
         assert code == InteractReturnCodes.SUCCESS
         assert state == State.COLLECTING_ANSWERS
-        assert isinstance(data, str)  # Should be the prompt
+        assert isinstance(data, dict)  # Should be a dict with prompt and player_has_answered
+        assert "prompt" in data
+        assert "player_has_answered" in data
+        assert data["player_has_answered"] is False  # Alice hasn't submitted an answer yet
+
+    def test_get_room_state_collecting_answers_after_submission(self, room_with_players):
+        """Test getting room state during answer collection after player has submitted"""
+        room_with_players.start()
+        
+        # Alice submits an answer
+        room_with_players.submit_data("alice", {"answer": "my answer"})
+        
+        code, state, data = room_with_players.get_room_state("alice")
+        assert code == InteractReturnCodes.SUCCESS
+        assert state == State.COLLECTING_ANSWERS
+        assert isinstance(data, dict)
+        assert "prompt" in data
+        assert "player_has_answered" in data
+        assert data["player_has_answered"] is True  # Alice has submitted an answer
+        
+        # But bob hasn't submitted yet
+        code, state, data = room_with_players.get_room_state("bob")
+        assert code == InteractReturnCodes.SUCCESS
+        assert state == State.COLLECTING_ANSWERS
+        assert data["player_has_answered"] is False  # Bob hasn't submitted an answer yet
     
     def test_get_room_state_voting(self, room_with_players):
         """Test getting room state during voting"""
@@ -285,7 +309,37 @@ class TestPromptRoom:
         assert isinstance(data, dict)
         assert "prompt" in data
         assert "answers" in data
+        assert "player_has_voted" in data
+        assert data["player_has_voted"] is False  # Alice hasn't voted yet
         assert isinstance(data["answers"], list)
+
+    def test_get_room_state_voting_after_vote(self, room_with_players):
+        """Test getting room state during voting after player has voted"""
+        room_with_players.start()
+        
+        # Move to voting phase
+        room_with_players.submit_data("alice", {"answer": "answer1"})
+        room_with_players.submit_data("bob", {"answer": "answer2"})
+        room_with_players.submit_data("charlie", {"answer": "answer3"})
+        
+        # Alice votes
+        alice_options = room_with_players.vote_orders["alice"]
+        room_with_players.submit_data("alice", {"voted_for_answer_id": alice_options[0]})
+        
+        code, state, data = room_with_players.get_room_state("alice")
+        assert code == InteractReturnCodes.SUCCESS
+        assert state == State.VOTING
+        assert isinstance(data, dict)
+        assert "prompt" in data
+        assert "answers" in data
+        assert "player_has_voted" in data
+        assert data["player_has_voted"] is True  # Alice has voted
+        
+        # But bob hasn't voted yet
+        code, state, data = room_with_players.get_room_state("bob")
+        assert code == InteractReturnCodes.SUCCESS
+        assert state == State.VOTING
+        assert data["player_has_voted"] is False  # Bob hasn't voted yet
     
     def test_get_room_state_voting_no_player(self, room_with_players):
         """Test getting room state during voting with no player specified"""

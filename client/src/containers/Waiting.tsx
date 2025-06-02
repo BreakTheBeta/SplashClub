@@ -64,7 +64,8 @@ const Waiting: React.FC<WaitingProps> = (props) => {
               page: "prompt",
               user: props.user,
               room: props.room,
-              prompt: data.prompt
+              prompt: data.prompt,
+              already_answered: data.already_answered
             });
           // }
         } else if (data.type === "ask_vote") {
@@ -100,7 +101,7 @@ const Waiting: React.FC<WaitingProps> = (props) => {
   };
 
   function validateStart(): boolean {
-    return users.length > 1;
+    return users.length >= 3;
   }
 
   function handleStart(): void {
@@ -143,7 +144,13 @@ const Waiting: React.FC<WaitingProps> = (props) => {
 
           {users.length === 1 && users.includes(props.user) && (
             <p className={`text-center italic mt-2 ${theme.text.secondary}`}>
-              Waiting for at least one more player...
+              Waiting for at least 2 more players...
+            </p>
+          )}
+
+          {users.length === 2 && (
+            <p className={`text-center italic mt-2 ${theme.text.secondary}`}>
+              Waiting for at least 1 more player...
             </p>
           )}
         </div>
@@ -160,7 +167,7 @@ const Waiting: React.FC<WaitingProps> = (props) => {
 
         {!validateStart() && users.length > 0 && ( // Show message only if there's at least one player (usually 'you')
           <p className={`text-sm mt-2 ${theme.text.secondary} italic`}>
-            At least 2 players are needed to start the game
+            At least 3 players are needed to start the game
           </p>
         )}
       </div>

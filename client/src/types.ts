@@ -19,6 +19,7 @@ export interface PageState {
   prompt?: string;
   answers?: Answer[];
   results?: any;
+  already_answered?: boolean;
 }
 
 // Common WebSocket message data structure (adjust as per your backend)

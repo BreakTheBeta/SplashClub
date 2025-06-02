@@ -257,15 +257,24 @@ class PromptRoom(Room):
         if self.round >= PromptRoom.ROUNDS:
             return (InteractReturnCodes.SUCCESS, self.state, {})
         elif self.state == State.COLLECTING_ANSWERS:
-            return (InteractReturnCodes.SUCCESS, self.state, self.get_prompt())
+            # Include whether this specific player has already submitted an answer
+            player_has_answered = player is not None and player in self.answers
+            prompt_data = {
+                'prompt': self.get_prompt(),
+                'player_has_answered': player_has_answered
+            }
+            return (InteractReturnCodes.SUCCESS, self.state, prompt_data)
         elif self.state == State.WAITING_TO_START:
             return (InteractReturnCodes.SUCCESS, self.state, {"players": list(self.players.keys())})
         elif self.state == State.VOTING:
             if player is None:
                 return (InteractReturnCodes.PLAYER_NOT_FOUND, self.state, {})
+            # Include whether this specific player has already voted
+            player_has_voted = player in self.votes
             answers_data = {
                 'prompt': self.prompts[self.round][0], 
-                'answers': self.get_answers(player)
+                'answers': self.get_answers(player),
+                'player_has_voted': player_has_voted
             }
             return (InteractReturnCodes.SUCCESS, self.state, answers_data)
         elif self.state == State.SHOWING_RESULTS:

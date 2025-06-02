@@ -88,6 +88,7 @@ class UserUpdateServerMessage(BaseServerMessage):
 class AskPromptServerMessage(BaseServerMessage):
     type: Literal["ask_prompt"] = "ask_prompt"
     prompt: str = Field(..., description="The prompt/question for the current round.")
+    already_answered: Optional[bool] = Field(default=False, description="True if the player has already submitted an answer for this prompt.")
 
 class AnswerOptionForVote(BaseModel):
     id: str = Field(..., description="Unique ID for this answer option.")

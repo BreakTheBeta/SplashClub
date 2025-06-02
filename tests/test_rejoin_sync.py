@@ -234,4 +234,104 @@ class TestRejoinGameStateSync:
         result = await rejoin_handler.handle(mock_websocket, message)
         
         assert result is True
-        rejoin_handler.connection_manager.register_user.assert_called_once() 
+        rejoin_handler.connection_manager.register_user.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_rejoin_collecting_answers_state_already_answered(self, rejoin_handler, mock_websocket, room_with_game_in_progress):
+        """Test rejoining when game is in COLLECTING_ANSWERS state and user has already submitted an answer."""
+        room_id, room = room_with_game_in_progress
+        
+        # Start the game to move to COLLECTING_ANSWERS
+        room.start()
+        assert room.state == State.COLLECTING_ANSWERS
+        
+        # Alice submits an answer
+        room.submit_data("alice", {"answer": "my answer"})
+        
+        message = ReJoinRoomClientMessage(room=room_id, user="alice")
+        
+        result = await rejoin_handler.handle(mock_websocket, message)
+        
+        assert result is True
+        
+        # Should send rejoin_room_ok + ask_prompt messages, with already_answered=true
+        calls = rejoin_handler.connection_manager.safe_websocket_send.call_args_list
+        assert len(calls) == 2
+        
+        # First message should be rejoin_room_ok
+        rejoin_message = json.loads(calls[0][0][1])
+        assert rejoin_message["type"] == "rejoin_room_ok"
+        
+        # Second message should be ask_prompt with already_answered=true
+        prompt_message = json.loads(calls[1][0][1])
+        assert prompt_message["type"] == "ask_prompt"
+        assert prompt_message["already_answered"] is True
+        assert "prompt" in prompt_message
+
+    @pytest.mark.asyncio
+    async def test_rejoin_voting_state_already_voted(self, rejoin_handler, mock_websocket, room_with_game_in_progress):
+        """Test rejoining when game is in VOTING state and user has already voted."""
+        room_id, room = room_with_game_in_progress
+        
+        # Start game and submit answers to move to VOTING
+        room.start()
+        room.submit_data("alice", {"answer": "answer1"})
+        room.submit_data("bob", {"answer": "answer2"})
+        room.submit_data("charlie", {"answer": "answer3"})
+        
+        assert room.state == State.VOTING
+        
+        # Alice votes
+        room.submit_data("alice", {"voted_for_answer_id": "bob"})
+        
+        message = ReJoinRoomClientMessage(room=room_id, user="alice")
+        
+        result = await rejoin_handler.handle(mock_websocket, message)
+        
+        assert result is True
+        
+        # Should only send rejoin_room_ok message, not ask_vote since user already voted
+        calls = rejoin_handler.connection_manager.safe_websocket_send.call_args_list
+        assert len(calls) == 1
+        
+        # First message should be rejoin_room_ok
+        rejoin_message = json.loads(calls[0][0][1])
+        assert rejoin_message["type"] == "rejoin_room_ok"
+
+    @pytest.mark.asyncio
+    async def test_rejoin_voting_state_different_user_not_voted(self, rejoin_handler, mock_websocket, room_with_game_in_progress):
+        """Test rejoining when game is in VOTING state and a different user hasn't voted yet."""
+        room_id, room = room_with_game_in_progress
+        
+        # Start game and submit answers to move to VOTING
+        room.start()
+        room.submit_data("alice", {"answer": "answer1"})
+        room.submit_data("bob", {"answer": "answer2"})
+        room.submit_data("charlie", {"answer": "answer3"})
+        
+        assert room.state == State.VOTING
+        
+        # Alice votes, but bob doesn't
+        room.submit_data("alice", {"voted_for_answer_id": "bob"})
+        
+        # Bob rejoins
+        message = ReJoinRoomClientMessage(room=room_id, user="bob")
+        
+        result = await rejoin_handler.handle(mock_websocket, message)
+        
+        assert result is True
+        
+        # Should send rejoin_room_ok + ask_vote messages since bob hasn't voted
+        calls = rejoin_handler.connection_manager.safe_websocket_send.call_args_list
+        assert len(calls) == 2
+        
+        # First message should be rejoin_room_ok
+        rejoin_message = json.loads(calls[0][0][1])
+        assert rejoin_message["type"] == "rejoin_room_ok"
+        
+        # Second message should be ask_vote
+        vote_message = json.loads(calls[1][0][1])
+        assert vote_message["type"] == "ask_vote"
+        assert "prompt" in vote_message
+        assert "answers" in vote_message
+        assert isinstance(vote_message["answers"], list) 

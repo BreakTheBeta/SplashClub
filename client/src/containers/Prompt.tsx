@@ -8,7 +8,8 @@ import type { PageState } from "../types"; // Import shared types
 import type { 
   SubmitAnswerClientMessage,
   ErrorServerMessage,
-  AskVoteServerMessage
+  AskVoteServerMessage,
+  AskPromptServerMessage
 } from "../generated/sockets_types";
 import useWebSocket from "react-use-websocket";
 import { WS_URL } from "../const";
@@ -18,6 +19,7 @@ interface PromptProps {
   user: string;
   room: string;
   prompt: string;
+  already_answered?: boolean;
 }
 
 const Prompt: React.FC<PromptProps> = (props) => {
@@ -25,7 +27,8 @@ const Prompt: React.FC<PromptProps> = (props) => {
   const [error, setError] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
   const [waiting, setWaiting] = useState<boolean>(false); // To disable input/button while submitting
-  const [answered, setanswered] = useState<boolean>(false);
+  const [answered, setanswered] = useState<boolean>(props.already_answered || false);
+  const [selectedChoice, setSelectedChoice] = useState("");
 
   const theme = useTheme();
 
@@ -36,7 +39,7 @@ const Prompt: React.FC<PromptProps> = (props) => {
   useEffect(() => {
     if (lastMessage !== null) {
       try {
-        const data = JSON.parse(lastMessage.data as string) as (ErrorServerMessage | AskVoteServerMessage);
+        const data = JSON.parse(lastMessage.data as string) as (ErrorServerMessage | AskVoteServerMessage | AskPromptServerMessage);
 
         if (data.type === "error") {
           setError(data.message || "An unexpected error occurred.");
@@ -50,6 +53,11 @@ const Prompt: React.FC<PromptProps> = (props) => {
             prompt: props.prompt,
             answers: data.answers
           });
+        } else if (data.type === "ask_prompt") {
+          // Handle rejoin sync - if already_answered is true, show the answered state
+          if (data.already_answered) {
+            setanswered(true);
+          }
         }
       } catch (e) {
         console.error(
