@@ -14,6 +14,7 @@ export type ThemeColors = {
     secondary: string;
     error: string;
     accent: string;
+    roomCode: string;
   };
   background: {
     card: string;
@@ -37,7 +38,8 @@ export const defaultTheme: ThemeColors = {
     primary: "text-slate-100",
     secondary: "text-cyan-200",
     error: "text-purple-400",
-    accent: "text-cyan-400"
+    accent: "text-cyan-400",
+    roomCode: "text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-400 to-cyan-300 font-black text-2xl drop-shadow-lg"
   },
   background: {
     card: "bg-slate-800",
@@ -61,7 +63,8 @@ export const darkTheme: ThemeColors = {
     primary: "text-white",
     secondary: "text-gray-300",
     error: "text-red-400",
-    accent: "text-blue-400"
+    accent: "text-blue-400",
+    roomCode: "text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 font-black text-2xl drop-shadow-lg"
   },
   background: {
     card: "bg-gray-800",
@@ -86,7 +89,8 @@ export const gameshowTheme: ThemeColors = {
     primary: "text-white font-bold drop-shadow-md",
     secondary: "text-slate-200 font-semibold drop-shadow-sm",
     error: "text-purple-700 font-semibold drop-shadow-md",
-    accent: "text-blue-200 font-bold drop-shadow-md"
+    accent: "text-blue-200 font-bold drop-shadow-md",
+    roomCode: "bg-gradient-to-r from-white-300 via-yellow-300 to-white-300 font-black text-3xl drop-shadow-2xl gameshow-room-code text-shadow-lg/10-purple"
   },
   background: {
     card: "bg-gradient-to-br from-slate-800 via-slate-900 to-blue-900 border-2 border-amber-400/30 shadow-2xl shadow-amber-500/20 backdrop-blur-sm",

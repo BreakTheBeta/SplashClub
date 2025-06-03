@@ -2,7 +2,6 @@
 
 <img src="./client/public/logo.png" alt="drawing" width="400"/>
 
-
 This is a fork and major modernisation of the jill_box repo: https://github.com/axlan/jill_box. 
 
 This demo game is similar to Fibbage, where players create fake answers to prompts and try to guess the real ones.
@@ -37,6 +36,13 @@ make client
 ```
 
 The game will be available at `http://localhost:3000` (or the port shown in your terminal).
+
+
+## Screenshots
+
+![](./assets/login.png)
+![](./assets/waiting.png)
+![](./assets/question.png)
 
 ## Todo List
 

@@ -119,8 +119,9 @@ const Waiting: React.FC<WaitingProps> = (props) => {
     <div className={`container mx-auto px-4 py-8 ${theme.background.page}`}>
       <div className={`border ${theme.border} rounded-lg p-6 shadow-sm ${theme.background.card} max-w-lg mx-auto ${isGameshowTheme ? 'gameshow-card' : ''}`}>
         <h2 className={`text-xl font-semibold mb-4 text-center ${theme.text.primary} ${isGameshowTheme ? 'gameshow-title text-3xl' : ''}`}>
-          Waiting to start room <span className="font-bold">{props.room}</span>
+          Waiting to start room: 
         </h2>
+        <h2 className={`text-center ${theme.text.roomCode}`}>{props.room}</h2>
 
         <div className="mb-6 text-center">
           <p className={`${theme.text.secondary} text-lg ${isGameshowTheme ? 'font-bold text-xl' : ''}`}>

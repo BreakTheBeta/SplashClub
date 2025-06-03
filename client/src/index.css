@@ -23,11 +23,8 @@ body {
   50% { box-shadow: 0 0 15px rgba(251, 191, 36, 0.5), 0 0 20px rgba(251, 191, 36, 0.3); }
 }
 
+
 /* Reduced bounce animation for mobile */
-@keyframes bounce-in {
-  0% { transform: scale(0.98); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
 
 @keyframes bounce-in-desktop {
   0% { transform: scale(0.95) rotate(-0.5deg); opacity: 0; }
@@ -68,10 +65,22 @@ body {
     0 0 20px rgba(251, 191, 36, 0.3);
 }
 
+/* Special room code styling for gameshow theme */
+.gameshow-room-code {
+  font-family: 'Orbitron', monospace;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  position: relative;
+}
+
 /* Mobile: Use simpler animation */
 @media (max-width: 768px) {
   .gameshow-title {
     animation: none; /* Disable glow animation on mobile */
+  }
+  
+  .gameshow-room-code {
+    animation: none;
   }
 }
 
@@ -79,6 +88,10 @@ body {
 @media (min-width: 769px) {
   .gameshow-title {
     animation: pulse-glow 4s ease-in-out infinite;
+  }
+  
+  .gameshow-room-code {
+    animation: room-code-glow 3s ease-in-out infinite;
   }
 }
 
@@ -133,7 +146,8 @@ body {
   .gameshow-title,
   .gameshow-card,
   .gameshow-card::before,
-  .gameshow-card::after {
+  .gameshow-card::after,
+  .gameshow-room-code {
     animation: none !important;
   }
 }

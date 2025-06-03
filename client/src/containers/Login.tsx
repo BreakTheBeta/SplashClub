@@ -115,10 +115,10 @@ const Login: React.FC<LoginProps> = (props) => {
       {isGameshowTheme && (
         <div className="text-center mb-8">
           <h1 className="gameshow-title text-4xl md:text-6xl mb-4">
-            🎬 SPLASH CLUB 🎬
+            SPLASH CLUB
           </h1>
           <p className={`text-xl md:text-2xl ${theme.text.secondary} font-semibold`}>
-            THE ULTIMATE PARTY GAME EXPERIENCE!
+            THE OFFLINE MULTIPLAYER PARTY GAME!
           </p>
         </div>
       )}
