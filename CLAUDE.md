@@ -24,6 +24,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `yarn build` - Build production bundle
 - `yarn lint` - ESLint code checking
 
+### Important Service Management Rules
+- **NEVER start the server or client directly** - Always use the provided Makefile commands (`make run-server`, `make run-client`)
+- The Makefile handles proper service management, process tracking, and cleanup
+- Direct execution bypasses the project's service management system
+
 ## Architecture Overview
 
 ### Backend (Python)
