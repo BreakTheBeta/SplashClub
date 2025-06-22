@@ -224,6 +224,10 @@ class PromptRoom(Room):
 
     def __show_results(self) -> None:
         self.state = State.SHOWING_RESULTS
+        # Update persistent scores only once when voting completes
+        for voter, voted_for in self.votes.items():
+            if voted_for in self.players and voted_for in self.scores:
+                self.scores[voted_for] += 1
 
     def __votes_to_score(self) -> Dict[str, int]:
         scores = {u: 0 for u in self.players}
@@ -231,9 +235,6 @@ class PromptRoom(Room):
         for voter, voted_for in self.votes.items():
             if voted_for in self.players:
                 scores[voted_for] += 1
-                # Add to total scores
-                if voted_for in self.scores:
-                    self.scores[voted_for] += 1
         return scores
 
     def __next_round(self) -> None:

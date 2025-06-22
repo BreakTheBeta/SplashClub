@@ -1,4 +1,4 @@
-.PHONY: help status $(addprefix run-,$(SERVICE_NAMES)) $(addprefix kill-,$(SERVICE_NAMES)) $(addprefix log-,$(SERVICE_NAMES)) clean test gen_types
+.PHONY: help status $(addprefix run-,$(SERVICE_NAMES)) $(addprefix kill-,$(SERVICE_NAMES)) $(addprefix log-,$(SERVICE_NAMES)) clean test gen_types kill-rogue-server
 
 # Directory for PIDs and logs
 SERVICE_BASE_DIR := .services
@@ -192,6 +192,37 @@ clean:  ## Clean up Python cache files and service files
 		echo "$(SERVICE_DIR_ABS) not found, nothing to remove."; \
 	fi
 	@echo "--- Cleanup complete ---"
+
+kill-rogue-server:  ## Find and kill any rogue server processes running on port 6969
+	@echo "--- Finding rogue server processes on port 6969 ---"
+	@_PIDS=$$(lsof -ti :6969 2>/dev/null || true); \
+	if [ -n "$$_PIDS" ]; then \
+		echo "🔍  Found processes using port 6969: $$_PIDS"; \
+		for _PID in $$_PIDS; do \
+			_PROCESS_INFO=$$(ps -p $$_PID -o pid,ppid,command 2>/dev/null || echo "Process $$_PID not found"); \
+			echo "📋  Process details: $$_PROCESS_INFO"; \
+			if kill -0 $$_PID 2>/dev/null; then \
+				echo "🛑  Killing rogue process $$_PID..."; \
+				kill $$_PID; \
+				sleep 0.5; \
+				if kill -0 $$_PID 2>/dev/null; then \
+					echo "⚠️   Process $$_PID did not stop with SIGTERM. Sending SIGKILL..."; \
+					kill -9 $$_PID; \
+					sleep 0.5; \
+				fi; \
+				if kill -0 $$_PID 2>/dev/null; then \
+					echo "❌  Failed to kill process $$_PID"; \
+				else \
+					echo "✅  Successfully killed process $$_PID"; \
+				fi; \
+			else \
+				echo "ℹ️   Process $$_PID already dead"; \
+			fi; \
+		done; \
+	else \
+		echo "✅  No processes found using port 6969"; \
+	fi; \
+	echo "--- Rogue server cleanup complete ---"
 
 test:  ## Run Python tests using uv
 	uv run pytest
