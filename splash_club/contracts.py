@@ -84,6 +84,7 @@ class UserUpdateServerMessage(BaseServerMessage):
     type: Literal["user_update"] = "user_update"
     # room: str # Client usually knows its room context
     users: List[str] = Field(..., description="Current list of user IDs in the room.")
+    owner: str = Field(..., description="User ID of the room owner.")
 
 class AskPromptServerMessage(BaseServerMessage):
     type: Literal["ask_prompt"] = "ask_prompt"

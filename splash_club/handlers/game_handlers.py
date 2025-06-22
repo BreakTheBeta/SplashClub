@@ -36,7 +36,7 @@ class StartRoomHandler(BaseHandler):
                 return False
                 
             # Try to start the room
-            ret_start = self.game_gateway.room_start(current_room_id)
+            ret_start = self.game_gateway.room_start(current_room_id, current_user_id)
             
             if ret_start == StartReturnCodes.SUCCESS:
                 # Import here to avoid circular imports

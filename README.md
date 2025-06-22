@@ -94,4 +94,4 @@ All service-related files (PID files, log files) are stored in the `.services/` 
 - [x] Disconnect/reconnect logic to stay in game
 - [x] Clean up App.tsx
 - [ ] Add sound effects and other assets
-- [ ] Add room owner privileges
+- [x] Add room owner privileges

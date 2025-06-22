@@ -24,6 +24,7 @@ interface WaitingProps {
 
 const Waiting: React.FC<WaitingProps> = (props) => {
   const [users, setUsers] = useState<string[]>([]);
+  const [owner, setOwner] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
   const theme = useTheme();
@@ -50,6 +51,7 @@ const Waiting: React.FC<WaitingProps> = (props) => {
           // Ensure the message is for the current room if your backend supports multiple rooms per connection
           // if (data.room === props.room) {
           setUsers(data.users || []);
+          setOwner(data.owner || "");
           // }
         } else if (data.type === 'error') {
           // Optionally, check if error is relevant to this room/context
@@ -107,6 +109,10 @@ const Waiting: React.FC<WaitingProps> = (props) => {
     return users.length >= 3;
   }
 
+  function isOwner(): boolean {
+    return owner === props.user;
+  }
+
   function handleStart(): void {
     const message: StartRoomClientMessage = {
       type: "start_room",
@@ -139,7 +145,9 @@ const Waiting: React.FC<WaitingProps> = (props) => {
                 key={`player-${index}`}
                 className={`px-4 py-2 ${theme.text.primary} ${isGameshowTheme ? 'font-semibold text-lg' : ''}`}
               >
-                {player} {player === props.user && <span className={`${theme.text.accent} ml-2 ${isGameshowTheme ? 'font-bold' : ''}`}>(you)</span>}
+                {player} 
+                {player === props.user && <span className={`${theme.text.accent} ml-2 ${isGameshowTheme ? 'font-bold' : ''}`}>(you)</span>}
+                {player === owner && <span className={`${theme.text.primary} ml-2 font-bold ${isGameshowTheme ? 'text-yellow-400' : 'text-blue-600'}`}>(host)</span>}
               </li>
             ))}
           </ul>
@@ -164,20 +172,28 @@ const Waiting: React.FC<WaitingProps> = (props) => {
         </div>
 
         <div className="text-center">
-          <Button
-          onClick={handleStart}
-          disabled={!validateStart()}
-          variant="primary"
-          fullWidth
-        >
-          Start Game
-        </Button>
+          {isOwner() ? (
+            <>
+              <Button
+                onClick={handleStart}
+                disabled={!validateStart()}
+                variant="primary"
+                fullWidth
+              >
+                Start Game
+              </Button>
 
-        {!validateStart() && users.length > 0 && ( // Show message only if there's at least one player (usually 'you')
-          <p className={`text-sm mt-2 ${theme.text.secondary} italic ${isGameshowTheme ? 'font-semibold' : ''}`}>
-            At least 3 players are needed to start the game
-          </p>
-        )}
+              {!validateStart() && users.length > 0 && ( // Show message only if there's at least one player (usually 'you')
+                <p className={`text-sm mt-2 ${theme.text.secondary} italic ${isGameshowTheme ? 'font-semibold' : ''}`}>
+                  At least 3 players are needed to start the game
+                </p>
+              )}
+            </>
+          ) : (
+            <p className={`text-lg ${theme.text.secondary} italic ${isGameshowTheme ? 'font-semibold text-xl' : ''}`}>
+              Waiting for the host to start the game...
+            </p>
+          )}
       </div>
     </div>
 

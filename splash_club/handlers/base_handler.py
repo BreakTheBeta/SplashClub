@@ -83,8 +83,10 @@ class BaseHandler(ABC):
         """
         try:
             users = self.connection_manager.get_room_users(room_id)
+            owner = self.game_gateway.get_room_owner(room_id) or ""
             message = UserUpdateServerMessage(
-                users=users  # users is already a List[str], no need to extract ["id"]
+                users=users,  # users is already a List[str], no need to extract ["id"]
+                owner=owner
             )
             await self.connection_manager.broadcast_to_room(room_id, message)
             return True

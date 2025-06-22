@@ -63,6 +63,7 @@ class StartReturnCodes(Enum):
     TOO_FEW_PLAYERS = auto()
     ALREADY_STARTED = auto()
     ROOM_NOT_FOUND = auto()
+    NOT_OWNER = auto()
 
 class InteractReturnCodes(Enum):
     SUCCESS = auto()
@@ -82,11 +83,15 @@ class Player:
 class Room(ABC):
     def __init__(self) -> None:
         self.players: Dict[str, Player] = {}
+        self.owner: Optional[str] = None
     
     def add_player(self, name: str) -> bool:
         if name in self.players.keys():
             return False
         self.players[name] = Player()
+        # Set owner to first player if not already set
+        if self.owner is None:
+            self.owner = name
         return True
 
     def rejoin_player(self, name: str) -> bool:
@@ -94,8 +99,14 @@ class Room(ABC):
             return True
         return False
     
+    def get_owner(self) -> Optional[str]:
+        return self.owner
+    
+    def is_owner(self, name: str) -> bool:
+        return self.owner == name
+    
     @abstractmethod
-    def start(self) -> StartReturnCodes:
+    def start(self, user: Optional[str] = None) -> StartReturnCodes:
         pass
     
     @abstractmethod
@@ -113,10 +124,10 @@ class GameGateway:
     def __init__(self) -> None:
         self.rooms: Dict[str, Room] = {}
 
-    def room_start(self, room: str) -> StartReturnCodes:
+    def room_start(self, room: str, user: Optional[str] = None) -> StartReturnCodes:
         if room not in self.rooms:
             return StartReturnCodes.ROOM_NOT_FOUND
-        return self.rooms[room].start()
+        return self.rooms[room].start(user)
 
     def new_game(self, room_class: Type[Room]) -> str:
         room = _random_id()
@@ -162,6 +173,11 @@ class GameGateway:
             else:
                 return InteractReturnCodes.PLAYER_NOT_FOUND
         return InteractReturnCodes.ROOM_NOT_FOUND
+    
+    def get_room_owner(self, room: str) -> Optional[str]:
+        if room in self.rooms:
+            return self.rooms[room].get_owner()
+        return None
 
 class PromptRoom(Room):
 
@@ -181,7 +197,9 @@ class PromptRoom(Room):
         self.scores: Dict[str, int] = {}  # Fixed type hint
         self.confirmed: Dict[str, bool] = {}
 
-    def start(self) -> StartReturnCodes:
+    def start(self, user: Optional[str] = None) -> StartReturnCodes:
+        if user is not None and not self.is_owner(user):
+            return StartReturnCodes.NOT_OWNER
         if self.state != State.WAITING_TO_START:
             return StartReturnCodes.ALREADY_STARTED
         if len(self.players) < 3:

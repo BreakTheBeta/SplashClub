@@ -196,4 +196,8 @@ export interface UserUpdateServerMessage {
    * Current list of user IDs in the room.
    */
   users: string[];
+  /**
+   * User ID of the room owner.
+   */
+  owner: string;
 }

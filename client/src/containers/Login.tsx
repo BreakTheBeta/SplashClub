@@ -118,7 +118,7 @@ const Login: React.FC<LoginProps> = (props) => {
             SPLASH CLUB
           </h1>
           <p className={`text-xl md:text-2xl ${theme.text.secondary} font-semibold`}>
-            THE OFFLINE MULTIPLAYER PARTY GAME!
+            THE COUCH MULTIPLAYER PARTY GAME!
           </p>
         </div>
       )}
