@@ -174,3 +174,8 @@ Thumbs.db
 # Project specific
 *.log
 REJOIN_FEATURE_SUMMARY.md
+
+
+# Serivce Logs
+.services/*
+
