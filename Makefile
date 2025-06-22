@@ -54,11 +54,25 @@ run-%:  ## Start/restart <$*>. Use ATTACH=1 for foreground.
 		_OLD_PID=$$(cat "$(_PIDF)" 2>/dev/null); \
 		if [ -n "$$_OLD_PID" ] && kill -0 $$_OLD_PID 2>/dev/null; then \
 			echo "🔄  Stopping old process $$_OLD_PID for $(_NAME)..."; \
-			kill $$_OLD_PID; \
+			if [ "$(_NAME)" = "client" ]; then \
+				echo "🔍  Also killing any child vite processes..."; \
+				pkill -P $$_OLD_PID 2>/dev/null || true; \
+				pkill -f "vite --host" 2>/dev/null || true; \
+			elif [ "$(_NAME)" = "server" ]; then \
+				echo "🔍  Also killing any child python processes and processes on port 6969..."; \
+				pkill -P $$_OLD_PID 2>/dev/null || true; \
+				_PORT_PIDS=$$(lsof -ti :6969 2>/dev/null || true); \
+				if [ -n "$$_PORT_PIDS" ]; then \
+					for _PORT_PID in $$_PORT_PIDS; do \
+						kill $$_PORT_PID 2>/dev/null || true; \
+					done; \
+				fi; \
+			fi; \
+			kill $$_OLD_PID 2>/dev/null || true; \
 			sleep 0.5; \
 			if kill -0 $$_OLD_PID 2>/dev/null; then \
 				echo "⚠️  Old process $$_OLD_PID did not stop with SIGTERM. Sending SIGKILL..."; \
-				kill -9 $$_OLD_PID; \
+				kill -9 $$_OLD_PID 2>/dev/null || true; \
 				sleep 0.5; \
 			fi; \
 			if kill -0 $$_OLD_PID 2>/dev/null; then \
@@ -125,11 +139,25 @@ kill-%:  ## Stop <$*>
 		_PID_TO_KILL=$$(cat "$(_PIDF)" 2>/dev/null); \
 		if [ -n "$$_PID_TO_KILL" ] && kill -0 $$_PID_TO_KILL 2>/dev/null; then \
 			echo "🛑  Killing $(_NAME) (pid $$_PID_TO_KILL)..."; \
-			kill $$_PID_TO_KILL; \
+			if [ "$(_NAME)" = "client" ]; then \
+				echo "🔍  Also killing any child vite processes..."; \
+				pkill -P $$_PID_TO_KILL 2>/dev/null || true; \
+				pkill -f "vite --host" 2>/dev/null || true; \
+			elif [ "$(_NAME)" = "server" ]; then \
+				echo "🔍  Also killing any child python processes and processes on port 6969..."; \
+				pkill -P $$_PID_TO_KILL 2>/dev/null || true; \
+				_PORT_PIDS=$$(lsof -ti :6969 2>/dev/null || true); \
+				if [ -n "$$_PORT_PIDS" ]; then \
+					for _PORT_PID in $$_PORT_PIDS; do \
+						kill $$_PORT_PID 2>/dev/null || true; \
+					done; \
+				fi; \
+			fi; \
+			kill $$_PID_TO_KILL 2>/dev/null || true; \
 			sleep 0.5; \
 			if kill -0 $$_PID_TO_KILL 2>/dev/null; then \
 				echo "⚠️  Process $$_PID_TO_KILL for $(_NAME) did not stop with SIGTERM. Sending SIGKILL..."; \
-				kill -9 $$_PID_TO_KILL; \
+				kill -9 $$_PID_TO_KILL 2>/dev/null || true; \
 				sleep 0.5; \
 			fi; \
 			if kill -0 $$_PID_TO_KILL 2>/dev/null; then \
