@@ -1,4 +1,4 @@
-.PHONY: help status $(addprefix run-,$(SERVICE_NAMES)) $(addprefix kill-,$(SERVICE_NAMES)) $(addprefix log-,$(SERVICE_NAMES)) clean test gen_types kill-rogue-server
+.PHONY: help status $(addprefix run-,$(SERVICE_NAMES)) $(addprefix kill-,$(SERVICE_NAMES)) $(addprefix log-,$(SERVICE_NAMES)) clean test gen_types
 
 # Directory for PIDs and logs
 SERVICE_BASE_DIR := .services
@@ -54,19 +54,24 @@ run-%:  ## Start/restart <$*>. Use ATTACH=1 for foreground.
 		_OLD_PID=$$(cat "$(_PIDF)" 2>/dev/null); \
 		if [ -n "$$_OLD_PID" ] && kill -0 $$_OLD_PID 2>/dev/null; then \
 			echo "🔄  Stopping old process $$_OLD_PID for $(_NAME)..."; \
-			if [ "$(_NAME)" = "client" ]; then \
-				echo "🔍  Also killing any child vite processes..."; \
-				pkill -P $$_OLD_PID 2>/dev/null || true; \
-				pkill -f "vite --host" 2>/dev/null || true; \
-			elif [ "$(_NAME)" = "server" ]; then \
-				echo "🔍  Also killing any child python processes and processes on port 6969..."; \
-				pkill -P $$_OLD_PID 2>/dev/null || true; \
-				_PORT_PIDS=$$(lsof -ti :6969 2>/dev/null || true); \
-				if [ -n "$$_PORT_PIDS" ]; then \
-					for _PORT_PID in $$_PORT_PIDS; do \
-						kill $$_PORT_PID 2>/dev/null || true; \
-					done; \
-				fi; \
+			echo "🔍  Killing process tree for PID $$_OLD_PID..."; \
+			_CHILD_PIDS=$$(pgrep -P $$_OLD_PID 2>/dev/null || true); \
+			if [ -n "$$_CHILD_PIDS" ]; then \
+				echo "🔍  Found child processes: $$_CHILD_PIDS"; \
+				for _CHILD_PID in $$_CHILD_PIDS; do \
+					echo "🔍  Killing child process $$_CHILD_PID..."; \
+					kill $$_CHILD_PID 2>/dev/null || true; \
+					_GRANDCHILD_PIDS=$$(pgrep -P $$_CHILD_PID 2>/dev/null || true); \
+					if [ -n "$$_GRANDCHILD_PIDS" ]; then \
+						echo "🔍  Found grandchild processes: $$_GRANDCHILD_PIDS"; \
+						for _GRANDCHILD_PID in $$_GRANDCHILD_PIDS; do \
+							echo "🔍  Killing grandchild process $$_GRANDCHILD_PID..."; \
+							kill $$_GRANDCHILD_PID 2>/dev/null || true; \
+						done; \
+					fi; \
+				done; \
+			else \
+				echo "🔍  No child processes found for PID $$_OLD_PID"; \
 			fi; \
 			kill $$_OLD_PID 2>/dev/null || true; \
 			sleep 0.5; \
@@ -139,19 +144,24 @@ kill-%:  ## Stop <$*>
 		_PID_TO_KILL=$$(cat "$(_PIDF)" 2>/dev/null); \
 		if [ -n "$$_PID_TO_KILL" ] && kill -0 $$_PID_TO_KILL 2>/dev/null; then \
 			echo "🛑  Killing $(_NAME) (pid $$_PID_TO_KILL)..."; \
-			if [ "$(_NAME)" = "client" ]; then \
-				echo "🔍  Also killing any child vite processes..."; \
-				pkill -P $$_PID_TO_KILL 2>/dev/null || true; \
-				pkill -f "vite --host" 2>/dev/null || true; \
-			elif [ "$(_NAME)" = "server" ]; then \
-				echo "🔍  Also killing any child python processes and processes on port 6969..."; \
-				pkill -P $$_PID_TO_KILL 2>/dev/null || true; \
-				_PORT_PIDS=$$(lsof -ti :6969 2>/dev/null || true); \
-				if [ -n "$$_PORT_PIDS" ]; then \
-					for _PORT_PID in $$_PORT_PIDS; do \
-						kill $$_PORT_PID 2>/dev/null || true; \
-					done; \
-				fi; \
+			echo "🔍  Killing process tree for PID $$_PID_TO_KILL..."; \
+			_CHILD_PIDS=$$(pgrep -P $$_PID_TO_KILL 2>/dev/null || true); \
+			if [ -n "$$_CHILD_PIDS" ]; then \
+				echo "🔍  Found child processes: $$_CHILD_PIDS"; \
+				for _CHILD_PID in $$_CHILD_PIDS; do \
+					echo "🔍  Killing child process $$_CHILD_PID..."; \
+					kill $$_CHILD_PID 2>/dev/null || true; \
+					_GRANDCHILD_PIDS=$$(pgrep -P $$_CHILD_PID 2>/dev/null || true); \
+					if [ -n "$$_GRANDCHILD_PIDS" ]; then \
+						echo "🔍  Found grandchild processes: $$_GRANDCHILD_PIDS"; \
+						for _GRANDCHILD_PID in $$_GRANDCHILD_PIDS; do \
+							echo "🔍  Killing grandchild process $$_GRANDCHILD_PID..."; \
+							kill $$_GRANDCHILD_PID 2>/dev/null || true; \
+						done; \
+					fi; \
+				done; \
+			else \
+				echo "🔍  No child processes found for PID $$_PID_TO_KILL"; \
 			fi; \
 			kill $$_PID_TO_KILL 2>/dev/null || true; \
 			sleep 0.5; \
@@ -221,36 +231,6 @@ clean:  ## Clean up Python cache files and service files
 	fi
 	@echo "--- Cleanup complete ---"
 
-kill-rogue-server:  ## Find and kill any rogue server processes running on port 6969
-	@echo "--- Finding rogue server processes on port 6969 ---"
-	@_PIDS=$$(lsof -ti :6969 2>/dev/null || true); \
-	if [ -n "$$_PIDS" ]; then \
-		echo "🔍  Found processes using port 6969: $$_PIDS"; \
-		for _PID in $$_PIDS; do \
-			_PROCESS_INFO=$$(ps -p $$_PID -o pid,ppid,command 2>/dev/null || echo "Process $$_PID not found"); \
-			echo "📋  Process details: $$_PROCESS_INFO"; \
-			if kill -0 $$_PID 2>/dev/null; then \
-				echo "🛑  Killing rogue process $$_PID..."; \
-				kill $$_PID; \
-				sleep 0.5; \
-				if kill -0 $$_PID 2>/dev/null; then \
-					echo "⚠️   Process $$_PID did not stop with SIGTERM. Sending SIGKILL..."; \
-					kill -9 $$_PID; \
-					sleep 0.5; \
-				fi; \
-				if kill -0 $$_PID 2>/dev/null; then \
-					echo "❌  Failed to kill process $$_PID"; \
-				else \
-					echo "✅  Successfully killed process $$_PID"; \
-				fi; \
-			else \
-				echo "ℹ️   Process $$_PID already dead"; \
-			fi; \
-		done; \
-	else \
-		echo "✅  No processes found using port 6969"; \
-	fi; \
-	echo "--- Rogue server cleanup complete ---"
 
 test:  ## Run Python tests using uv
 	uv run pytest
