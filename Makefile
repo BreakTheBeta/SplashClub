@@ -144,10 +144,21 @@ run-%:  ## Start/restart <$*>. Use ATTACH=1 for foreground, V=1 for verbose.
 			exit 1; \
 		fi; \
 		if [ "$(V)" = "1" ]; then \
-			echo "⏳  Waiting for process to stabilize (1s)..."; \
+			echo "⏳  Waiting for process to stabilize (2s)..."; \
 		fi; \
-		sleep 1; \
-		_NEW_PID=$$(cat "$(_PIDF)" 2>/dev/null); \
+		sleep 2; \
+		_SHELL_PID=$$(cat "$(_PIDF)" 2>/dev/null); \
+		if [ -n "$$_SHELL_PID" ]; then \
+			_ACTUAL_PID=$$(pgrep -P $$_SHELL_PID 2>/dev/null | head -1); \
+			if [ -n "$$_ACTUAL_PID" ]; then \
+				echo $$_ACTUAL_PID >"$(_PIDF)"; \
+				_NEW_PID=$$_ACTUAL_PID; \
+			else \
+				_NEW_PID=$$_SHELL_PID; \
+			fi; \
+		else \
+			_NEW_PID=""; \
+		fi; \
 		if [ -n "$$_NEW_PID" ] && kill -0 $$_NEW_PID 2>/dev/null; then \
 			if [ "$(V)" = "1" ]; then \
 				echo "✅  $(_NAME) is RUNNING (PID $$_NEW_PID)."; \
@@ -158,8 +169,21 @@ run-%:  ## Start/restart <$*>. Use ATTACH=1 for foreground, V=1 for verbose.
 			echo "❌ Error: $(_NAME) FAILED to start"; \
 			exit 1; \
 		fi; \
-		( timeout 20 tail -f "$(_LOGF)" 2>/dev/null || gtimeout 20 tail -f "$(_LOGF)" 2>/dev/null || \
-		  ( tail -f "$(_LOGF)" 2>/dev/null & _TAIL_PID=$$!; sleep 20; kill $$_TAIL_PID 2>/dev/null ) ) || true; \
+		pkill -f "tail -f.*$(_LOGF)" 2>/dev/null || true; \
+		( \
+			if command -v timeout >/dev/null 2>&1; then \
+				timeout 20 tail -f "$(_LOGF)" 2>/dev/null; \
+			elif command -v gtimeout >/dev/null 2>&1; then \
+				gtimeout 20 tail -f "$(_LOGF)" 2>/dev/null; \
+			else \
+				tail -f "$(_LOGF)" 2>/dev/null & \
+				_TAIL_PID=$$!; \
+				sleep 20; \
+				kill $$_TAIL_PID 2>/dev/null; \
+				wait $$_TAIL_PID 2>/dev/null; \
+			fi; \
+		) 2>/dev/null || true; \
+		pkill -f "tail -f.*$(_LOGF)" 2>/dev/null || true; \
 		if [ "$(V)" = "1" ]; then \
 			echo ""; \
 			echo "────────────────────────────────────────────────────────"; \
@@ -276,6 +300,8 @@ gen_types:  ## Generate TypeScript types from Pydantic models
 clean:  ## Clean up Python cache files and service files
 	@echo "--- Cleaning up ---"
 	find . -name '*.pyc' -delete -print
+	@echo "Killing any orphaned tail processes..."
+	@pkill -f "tail -f.*\.services.*\.log" 2>/dev/null || true
 	@if [ -d "$(SERVICE_DIR_ABS)" ]; then \
 		echo "Removing $(SERVICE_DIR_ABS)..."; \
 		rm -rf "$(SERVICE_DIR_ABS)"; \
