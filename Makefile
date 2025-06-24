@@ -31,153 +31,208 @@ help:  ## Show this help
 	done
 
 # ---------------- run-<name> ----------------
-run-%:  ## Start/restart <$*>. Use ATTACH=1 for foreground.
+run-%:  ## Start/restart <$*>. Use ATTACH=1 for foreground, V=1 for verbose.
 	@$(eval _NAME := $*)
 	@$(eval _CMD  := $($*_CMD))
 	@$(eval _WD   := $(or $($*_WORKDIR),.)) # Default to . if not set
 	@$(eval _PIDF := $(SERVICE_DIR_ABS)/$(_NAME).pid)
 	@$(eval _LOGF := $(SERVICE_DIR_ABS)/$(_NAME).log)
 
-	@echo "--- Preparing to run $(_NAME) ---"
-	@echo "  Command: $(_CMD)"
-	@echo "  Working directory: $(_WD)"
-	@echo "  PID file: $(_PIDF)"
-	@echo "  Log file: $(_LOGF)"
+	@if [ "$(V)" = "1" ]; then \
+		echo "--- Preparing to run $(_NAME) ---"; \
+		echo "  Command: $(_CMD)"; \
+		echo "  Working directory: $(_WD)"; \
+		echo "  PID file: $(_PIDF)"; \
+		echo "  Log file: $(_LOGF)"; \
+	else \
+		echo "Running: $(_CMD)"; \
+	fi
 
 	@if [ -z "$(_CMD)" ]; then \
 		echo "❌ Error: $(_NAME)_CMD is undefined."; exit 1; \
 	fi; \
 	mkdir -p "$(SERVICE_DIR_ABS)"; \
 	\
-	echo "--- Stopping old process for $(_NAME) (if any) ---"; \
+	if [ "$(V)" = "1" ]; then \
+		echo "--- Stopping old process for $(_NAME) (if any) ---"; \
+	fi; \
 	if [ -f "$(_PIDF)" ]; then \
 		_OLD_PID=$$(cat "$(_PIDF)" 2>/dev/null); \
 		if [ -n "$$_OLD_PID" ] && kill -0 $$_OLD_PID 2>/dev/null; then \
-			echo "🔄  Stopping old process $$_OLD_PID for $(_NAME)..."; \
-			echo "🔍  Killing process tree for PID $$_OLD_PID..."; \
+			if [ "$(V)" = "1" ]; then \
+				echo "🔄  Stopping old process $$_OLD_PID for $(_NAME)..."; \
+				echo "🔍  Killing process tree for PID $$_OLD_PID..."; \
+			fi; \
 			_CHILD_PIDS=$$(pgrep -P $$_OLD_PID 2>/dev/null || true); \
 			if [ -n "$$_CHILD_PIDS" ]; then \
-				echo "🔍  Found child processes: $$_CHILD_PIDS"; \
+				if [ "$(V)" = "1" ]; then \
+					echo "🔍  Found child processes: $$_CHILD_PIDS"; \
+				fi; \
 				for _CHILD_PID in $$_CHILD_PIDS; do \
-					echo "🔍  Killing child process $$_CHILD_PID..."; \
+					if [ "$(V)" = "1" ]; then \
+						echo "🔍  Killing child process $$_CHILD_PID..."; \
+					fi; \
 					kill $$_CHILD_PID 2>/dev/null || true; \
 					_GRANDCHILD_PIDS=$$(pgrep -P $$_CHILD_PID 2>/dev/null || true); \
 					if [ -n "$$_GRANDCHILD_PIDS" ]; then \
-						echo "🔍  Found grandchild processes: $$_GRANDCHILD_PIDS"; \
+						if [ "$(V)" = "1" ]; then \
+							echo "🔍  Found grandchild processes: $$_GRANDCHILD_PIDS"; \
+						fi; \
 						for _GRANDCHILD_PID in $$_GRANDCHILD_PIDS; do \
-							echo "🔍  Killing grandchild process $$_GRANDCHILD_PID..."; \
+							if [ "$(V)" = "1" ]; then \
+								echo "🔍  Killing grandchild process $$_GRANDCHILD_PID..."; \
+							fi; \
 							kill $$_GRANDCHILD_PID 2>/dev/null || true; \
 						done; \
 					fi; \
 				done; \
 			else \
-				echo "🔍  No child processes found for PID $$_OLD_PID"; \
+				if [ "$(V)" = "1" ]; then \
+					echo "🔍  No child processes found for PID $$_OLD_PID"; \
+				fi; \
 			fi; \
 			kill $$_OLD_PID 2>/dev/null || true; \
 			sleep 0.5; \
 			if kill -0 $$_OLD_PID 2>/dev/null; then \
-				echo "⚠️  Old process $$_OLD_PID did not stop with SIGTERM. Sending SIGKILL..."; \
+				if [ "$(V)" = "1" ]; then \
+					echo "⚠️  Old process $$_OLD_PID did not stop with SIGTERM. Sending SIGKILL..."; \
+				fi; \
 				kill -9 $$_OLD_PID 2>/dev/null || true; \
 				sleep 0.5; \
 			fi; \
 			if kill -0 $$_OLD_PID 2>/dev/null; then \
-				echo "❌ Error: Failed to stop old process $$_OLD_PID."; \
+				if [ "$(V)" = "1" ]; then \
+					echo "❌ Error: Failed to stop old process $$_OLD_PID."; \
+				fi; \
 			else \
-				echo "🛑  Old process $$_OLD_PID stopped."; \
+				if [ "$(V)" = "1" ]; then \
+					echo "🛑  Old process $$_OLD_PID stopped."; \
+				fi; \
 			fi; \
 		else \
-			echo "ℹ️  Stale PID file found: $(_PIDF) (process $$_OLD_PID not running or PID missing). Removing."; \
+			if [ "$(V)" = "1" ]; then \
+				echo "ℹ️  Stale PID file found: $(_PIDF) (process $$_OLD_PID not running or PID missing). Removing."; \
+			fi; \
 		fi; \
 		rm -f "$(_PIDF)"; \
 	else \
-		echo "ℹ️  No existing PID file found for $(_NAME)."; \
+		if [ "$(V)" = "1" ]; then \
+			echo "ℹ️  No existing PID file found for $(_NAME)."; \
+		fi; \
 	fi; \
 	\
 	if [ "$(ATTACH)" = "1" ]; then \
-		echo "--- Starting $(_NAME) in ATTACH mode (foreground) ---"; \
+		if [ "$(V)" = "1" ]; then \
+			echo "--- Starting $(_NAME) in ATTACH mode (foreground) ---"; \
+		fi; \
 		cd "$(_WD)" && $(_CMD); \
 		_EXIT_CODE=$$?; \
-		echo "--- $(_NAME) (foreground) exited with code $$_EXIT_CODE ---"; \
+		if [ "$(V)" = "1" ]; then \
+			echo "--- $(_NAME) (foreground) exited with code $$_EXIT_CODE ---"; \
+		fi; \
 		exit $$_EXIT_CODE; \
 	else \
-		echo "--- Starting $(_NAME) in DETACH mode (background) ---"; \
+		if [ "$(V)" = "1" ]; then \
+			echo "--- Starting $(_NAME) in DETACH mode (background) ---"; \
+		fi; \
 		( cd "$(_WD)" && nohup $(_CMD) >"$(_LOGF)" 2>&1 & echo $$! >"$(_PIDF)" ); \
 		_LAUNCH_EC=$$?; \
 		if [ $$_LAUNCH_EC -ne 0 ]; then \
-			echo "❌ Error: Failed to launch background subshell for $(_NAME). Shell exit code: $$_LAUNCH_EC"; \
+			echo "❌ Error: Failed to launch $(_NAME). Exit code: $$_LAUNCH_EC"; \
 			exit 1; \
 		fi; \
-		echo "⏳  Waiting for process to stabilize (1s)..."; \
+		if [ "$(V)" = "1" ]; then \
+			echo "⏳  Waiting for process to stabilize (1s)..."; \
+		fi; \
 		sleep 1; \
 		_NEW_PID=$$(cat "$(_PIDF)" 2>/dev/null); \
 		if [ -n "$$_NEW_PID" ] && kill -0 $$_NEW_PID 2>/dev/null; then \
-			echo "✅  $(_NAME) is RUNNING (PID $$_NEW_PID)."; \
-		else \
-			if [ -z "$$_NEW_PID" ]; then \
-				echo "❌ Error: $(_NAME) FAILED to start (PID file $(_PIDF) not created or empty)."; \
-			else \
-				echo "❌ Error: $(_NAME) FAILED to start or EXITED QUICKLY (PID from file: $$_NEW_PID)."; \
+			if [ "$(V)" = "1" ]; then \
+				echo "✅  $(_NAME) is RUNNING (PID $$_NEW_PID)."; \
+				echo "📋  Showing startup output for 20 seconds, then detaching..."; \
+				echo "────────────────────────────────────────────────────────"; \
 			fi; \
-			echo "   Check logs for more details."; \
+		else \
+			echo "❌ Error: $(_NAME) FAILED to start"; \
+			exit 1; \
 		fi; \
-		echo "📋  Showing startup output for 20 seconds, then detaching..."; \
-		echo "────────────────────────────────────────────────────────"; \
 		( timeout 20 tail -f "$(_LOGF)" 2>/dev/null || gtimeout 20 tail -f "$(_LOGF)" 2>/dev/null || \
 		  ( tail -f "$(_LOGF)" 2>/dev/null & _TAIL_PID=$$!; sleep 20; kill $$_TAIL_PID 2>/dev/null ) ) || true; \
-		echo ""; \
-		echo "────────────────────────────────────────────────────────"; \
-		echo "✅  $(_NAME) is running in background (PID $$_NEW_PID)"; \
-		echo "📄  Full logs: make log-$(_NAME)"; \
-		echo "🛑  Stop service: make kill-$(_NAME)"; \
+		if [ "$(V)" = "1" ]; then \
+			echo ""; \
+			echo "────────────────────────────────────────────────────────"; \
+			echo "✅  $(_NAME) is running in background (PID $$_NEW_PID)"; \
+			echo "📄  Full logs: make log-$(_NAME)"; \
+			echo "🛑  Stop service: make kill-$(_NAME)"; \
+		fi; \
 	fi
 
 # ---------------- kill-<name> --------------
-kill-%:  ## Stop <$*>
+kill-%:  ## Stop <$*>. Use V=1 for verbose.
 	@$(eval _NAME := $*)
 	@$(eval _PIDF := $(SERVICE_DIR_ABS)/$(_NAME).pid)
-	@echo "--- Attempting to kill $(_NAME) ---"
+	@if [ "$(V)" = "1" ]; then \
+		echo "--- Attempting to kill $(_NAME) ---"; \
+	fi
 	@if [ -f "$(_PIDF)" ]; then \
 		_PID_TO_KILL=$$(cat "$(_PIDF)" 2>/dev/null); \
 		if [ -n "$$_PID_TO_KILL" ] && kill -0 $$_PID_TO_KILL 2>/dev/null; then \
-			echo "🛑  Killing $(_NAME) (pid $$_PID_TO_KILL)..."; \
-			echo "🔍  Killing process tree for PID $$_PID_TO_KILL..."; \
+			if [ "$(V)" = "1" ]; then \
+				echo "🛑  Killing $(_NAME) (pid $$_PID_TO_KILL)..."; \
+				echo "🔍  Killing process tree for PID $$_PID_TO_KILL..."; \
+			fi; \
 			_CHILD_PIDS=$$(pgrep -P $$_PID_TO_KILL 2>/dev/null || true); \
 			if [ -n "$$_CHILD_PIDS" ]; then \
-				echo "🔍  Found child processes: $$_CHILD_PIDS"; \
+				if [ "$(V)" = "1" ]; then \
+					echo "🔍  Found child processes: $$_CHILD_PIDS"; \
+				fi; \
 				for _CHILD_PID in $$_CHILD_PIDS; do \
-					echo "🔍  Killing child process $$_CHILD_PID..."; \
+					if [ "$(V)" = "1" ]; then \
+						echo "🔍  Killing child process $$_CHILD_PID..."; \
+					fi; \
 					kill $$_CHILD_PID 2>/dev/null || true; \
 					_GRANDCHILD_PIDS=$$(pgrep -P $$_CHILD_PID 2>/dev/null || true); \
 					if [ -n "$$_GRANDCHILD_PIDS" ]; then \
-						echo "🔍  Found grandchild processes: $$_GRANDCHILD_PIDS"; \
+						if [ "$(V)" = "1" ]; then \
+							echo "🔍  Found grandchild processes: $$_GRANDCHILD_PIDS"; \
+						fi; \
 						for _GRANDCHILD_PID in $$_GRANDCHILD_PIDS; do \
-							echo "🔍  Killing grandchild process $$_GRANDCHILD_PID..."; \
+							if [ "$(V)" = "1" ]; then \
+								echo "🔍  Killing grandchild process $$_GRANDCHILD_PID..."; \
+							fi; \
 							kill $$_GRANDCHILD_PID 2>/dev/null || true; \
 						done; \
 					fi; \
 				done; \
 			else \
-				echo "🔍  No child processes found for PID $$_PID_TO_KILL"; \
+				if [ "$(V)" = "1" ]; then \
+					echo "🔍  No child processes found for PID $$_PID_TO_KILL"; \
+				fi; \
 			fi; \
 			kill $$_PID_TO_KILL 2>/dev/null || true; \
 			sleep 0.5; \
 			if kill -0 $$_PID_TO_KILL 2>/dev/null; then \
-				echo "⚠️  Process $$_PID_TO_KILL for $(_NAME) did not stop with SIGTERM. Sending SIGKILL..."; \
+				if [ "$(V)" = "1" ]; then \
+					echo "⚠️  Process $$_PID_TO_KILL for $(_NAME) did not stop with SIGTERM. Sending SIGKILL..."; \
+				fi; \
 				kill -9 $$_PID_TO_KILL 2>/dev/null || true; \
 				sleep 0.5; \
 			fi; \
 			if kill -0 $$_PID_TO_KILL 2>/dev/null; then \
 				echo "❌ Error: Failed to kill process $$_PID_TO_KILL for $(_NAME)."; \
-			else \
-				echo "✅  Process $$_PID_TO_KILL for $(_NAME) stopped."; \
-				rm -f "$(_PIDF)"; \
 			fi; \
+			rm -f "$(_PIDF)"; \
+			echo "Process killed successfully"; \
 		else \
-			echo "ℹ️  $(_NAME) not running (stale PID file: $(_PIDF) with PID $$_PID_TO_KILL, or PID missing). Removing PID file."; \
+			if [ "$(V)" = "1" ]; then \
+				echo "ℹ️  $(_NAME) not running (stale PID file: $(_PIDF) with PID $$_PID_TO_KILL, or PID missing). Removing PID file."; \
+			fi; \
 			rm -f "$(_PIDF)"; \
 		fi; \
 	else \
-		echo "ℹ️  $(_NAME) not running (no PID file found at $(_PIDF))."; \
+		if [ "$(V)" = "1" ]; then \
+			echo "ℹ️  $(_NAME) not running (no PID file found at $(_PIDF))."; \
+		fi; \
 	fi
 
 # ---------------- log-<name> ---------------
