@@ -120,19 +120,15 @@ run-%:  ## Start/restart <$*>. Use ATTACH=1 for foreground.
 			fi; \
 			echo "   Check logs for more details."; \
 		fi; \
-		echo "--- Log Information for $(_NAME) ---"; \
-		if [ -f "$(_LOGF)" ]; then \
-			if [ -s "$(_LOGF)" ]; then \
-				echo "   Showing first 20 lines of log: $(_LOGF)"; \
-				head -n 20 "$(_LOGF)"; \
-			else \
-				echo "   Log file $(_LOGF) exists but is EMPTY."; \
-			fi; \
-		else \
-			echo "   Log file $(_LOGF) does NOT exist."; \
-			echo "   (This may be normal if the command hasn't produced output yet or failed before logging)."; \
-		fi; \
-		echo "--- End of $(_NAME) run ---"; \
+		echo "📋  Showing startup output for 20 seconds, then detaching..."; \
+		echo "────────────────────────────────────────────────────────"; \
+		( timeout 20 tail -f "$(_LOGF)" 2>/dev/null || gtimeout 20 tail -f "$(_LOGF)" 2>/dev/null || \
+		  ( tail -f "$(_LOGF)" 2>/dev/null & _TAIL_PID=$$!; sleep 20; kill $$_TAIL_PID 2>/dev/null ) ) || true; \
+		echo ""; \
+		echo "────────────────────────────────────────────────────────"; \
+		echo "✅  $(_NAME) is running in background (PID $$_NEW_PID)"; \
+		echo "📄  Full logs: make log-$(_NAME)"; \
+		echo "🛑  Stop service: make kill-$(_NAME)"; \
 	fi
 
 # ---------------- kill-<name> --------------
