@@ -101,7 +101,7 @@ run-%:  ## Start/restart <$*>. Use ATTACH=1 for foreground.
 		exit $$_EXIT_CODE; \
 	else \
 		echo "--- Starting $(_NAME) in DETACH mode (background) ---"; \
-		( cd "$(_WD)" && nohup $(_CMD) >>"$(_LOGF)" 2>&1 & echo $$! >"$(_PIDF)" ); \
+		( cd "$(_WD)" && nohup $(_CMD) >"$(_LOGF)" 2>&1 & echo $$! >"$(_PIDF)" ); \
 		_LAUNCH_EC=$$?; \
 		if [ $$_LAUNCH_EC -ne 0 ]; then \
 			echo "❌ Error: Failed to launch background subshell for $(_NAME). Shell exit code: $$_LAUNCH_EC"; \
