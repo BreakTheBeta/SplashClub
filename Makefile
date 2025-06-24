@@ -5,6 +5,9 @@ SERVICE_BASE_DIR := .services
 # Absolute path to service directory. $(CURDIR) is directory of current Makefile.
 SERVICE_DIR_ABS := $(CURDIR)/$(SERVICE_BASE_DIR)
 
+# Startup log display timeout (seconds)
+STARTUP_TIMEOUT := 8
+
 # List your services here:
 SERVICE_NAMES := server client
 
@@ -162,7 +165,7 @@ run-%:  ## Start/restart <$*>. Use ATTACH=1 for foreground, V=1 for verbose.
 		if [ -n "$$_NEW_PID" ] && kill -0 $$_NEW_PID 2>/dev/null; then \
 			if [ "$(V)" = "1" ]; then \
 				echo "✅  $(_NAME) is RUNNING (PID $$_NEW_PID)."; \
-				echo "📋  Showing startup output for 20 seconds, then detaching..."; \
+				echo "📋  Showing startup output for $(STARTUP_TIMEOUT) seconds, then detaching..."; \
 				echo "────────────────────────────────────────────────────────"; \
 			fi; \
 		else \
@@ -172,13 +175,13 @@ run-%:  ## Start/restart <$*>. Use ATTACH=1 for foreground, V=1 for verbose.
 		pkill -f "tail -f.*$(_LOGF)" 2>/dev/null || true; \
 		( \
 			if command -v timeout >/dev/null 2>&1; then \
-				timeout 20 tail -f "$(_LOGF)" 2>/dev/null; \
+				timeout $(STARTUP_TIMEOUT) tail -f "$(_LOGF)" 2>/dev/null; \
 			elif command -v gtimeout >/dev/null 2>&1; then \
-				gtimeout 20 tail -f "$(_LOGF)" 2>/dev/null; \
+				gtimeout $(STARTUP_TIMEOUT) tail -f "$(_LOGF)" 2>/dev/null; \
 			else \
 				tail -f "$(_LOGF)" 2>/dev/null & \
 				_TAIL_PID=$$!; \
-				sleep 20; \
+				sleep $(STARTUP_TIMEOUT); \
 				kill $$_TAIL_PID 2>/dev/null; \
 				wait $$_TAIL_PID 2>/dev/null; \
 			fi; \

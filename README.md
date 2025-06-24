@@ -61,7 +61,7 @@ Ensure you have `make` installed on your system.
 
 - **Clean minimal output** - Shows just the command and startup logs
 - **Automatic process tree killing** - Properly handles complex processes like yarn→vite
-- **20-second startup display** - Shows real-time logs then auto-detaches
+- **Configurable startup display** - Shows real-time logs then auto-detaches (default: 20 seconds)
 - **Fresh logs every start** - Overwrites old logs for clean viewing
 - **Smart restart** - Automatically kills old processes before starting new ones
 - **Verbose mode** - Add `V=1` for detailed output with emojis and debug info
@@ -75,6 +75,7 @@ Services are defined in the `Makefile`:
 *   `<name>_WORKDIR`: The working directory for the command (defaults to `.` if not specified).
 *   `<name>_STOP_CMD`: Optional graceful shutdown command (uses process tree kill by default).
 *   `<name>_HEALTH`: Optional health check command for status monitoring.
+*   `STARTUP_TIMEOUT`: Duration in seconds to show startup logs before auto-detaching (default: 20).
 
 All service-related files (PID files, log files) are stored in the `.services/` directory at the root of the project.
 
@@ -117,11 +118,16 @@ To add a new service:
 2. Define the command: `newservice_CMD := your-command-here`
 3. Optional: Set working directory, stop command, or health check
 
-Example:
+Examples:
 ```makefile
+# Adding a new service
 redis_CMD := redis-server
 redis_STOP_CMD := redis-cli shutdown
 redis_HEALTH := redis-cli ping
+
+# Customizing startup timeout (default: 20 seconds)
+STARTUP_TIMEOUT := 10  # Show logs for 10 seconds
+STARTUP_TIMEOUT := 30  # Show logs for 30 seconds
 ```
 
 **Example Workflow:**

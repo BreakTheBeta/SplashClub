@@ -77,6 +77,11 @@ Once defined, all standard commands work automatically:
 - The Makefile handles proper service management, process tracking, and cleanup
 - Direct execution bypasses the project's service management system
 
+### Vibe Makefile Configuration
+- **Startup timeout**: Configurable via `STARTUP_TIMEOUT` variable in Makefile (default: 20 seconds)
+- Services show real-time logs during startup, then auto-detach after the timeout
+- To change timeout: modify `STARTUP_TIMEOUT := 20` to desired seconds (e.g., `STARTUP_TIMEOUT := 10`)
+
 ## Architecture Overview
 
 ### Backend (Python)
