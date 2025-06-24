@@ -2,14 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Development Commands
+## Development Commands (Vibe Makefile)
+
+The project uses a **"Vibe Makefile"** - a generic service management system with clean output by default and verbose mode when needed.
 
 ### Core Services
-- `make run-server` - Start Python WebSocket server (background)
-- `make run-client` - Start React dev server (background)
+- `make run-server` - Start Python WebSocket server (shows command + 20s startup logs)
+- `make run-client` - Start React dev server (shows command + 20s startup logs)
 - `make status` - Check status of all services
-- `make kill-server` / `make kill-client` - Stop services
+- `make kill-server` / `make kill-client` - Stop services (shows "Process killed successfully")
 - `make log-server` / `make log-client` - View service logs
+
+### Verbose Mode
+Add `V=1` to any command for detailed output with emojis and debug info:
+- `make run-server V=1` - Full verbose startup with detailed logging
+- `make kill-server V=1` - Detailed process tree killing with debug output
+- `make status V=1` - Enhanced status with health checks (if configured)
 
 ### Development Workflow
 - `make run-server ATTACH=1` - Run server in foreground for debugging
@@ -17,6 +25,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `make test` - Run Python tests with `uv run pytest`
 - `make clean` - Clean Python cache and service files
 - `make gen_types` - Generate TypeScript types from Pydantic models
+
+### Vibe Makefile Features
+- **Clean minimal output** by default - just shows command and logs
+- **Automatic process tree killing** - properly handles yarn→vite and other complex processes
+- **20-second startup display** - shows real-time logs then auto-detaches
+- **Fresh logs every start** - overwrites old logs for clean startup viewing
+- **Generic service system** - easy to add new services without hardcoding
+- **Smart restart** - automatically kills old processes before starting new ones
+
+### Adding New Services
+To add a new service to the Vibe Makefile:
+
+1. **Add to SERVICE_NAMES**: `SERVICE_NAMES := server client newservice`
+2. **Define the command**: `newservice_CMD := your-command-here`
+3. **Optional settings**:
+   - `newservice_WORKDIR := ./path/to/workdir` (defaults to current directory)
+   - `newservice_STOP_CMD := graceful-shutdown-command` (uses process tree kill by default)
+   - `newservice_HEALTH := health-check-command` (for status monitoring)
+
+**Examples:**
+```makefile
+# Database service
+redis_CMD := redis-server
+redis_STOP_CMD := redis-cli shutdown
+redis_HEALTH := redis-cli ping
+
+# Python API with virtual environment
+api_CMD := ./venv/bin/python app.py
+api_WORKDIR := ./backend
+api_HEALTH := curl -f localhost:5000/ping
+
+# Simple background worker
+worker_CMD := python worker.py
+worker_WORKDIR := ./scripts
+```
+
+Once defined, all standard commands work automatically:
+- `make run-newservice` / `make run-newservice V=1`
+- `make kill-newservice` / `make kill-newservice V=1`
+- `make log-newservice`
 
 ### Frontend Commands (from client/ directory)
 - `yarn dev` - Development server

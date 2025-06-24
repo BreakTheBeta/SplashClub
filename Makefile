@@ -26,7 +26,9 @@ help:  ## Show this help
 	@for srv in $(SERVICE_NAMES); do \
 		printf "  \033[36m%-25s\033[0m %s\n" "run-$$srv" "Start/restart $$srv (background)"; \
 		printf "  \033[36m%-25s\033[0m %s\n" "run-$$srv ATTACH=1" "Start $$srv in foreground"; \
+		printf "  \033[36m%-25s\033[0m %s\n" "run-$$srv V=1" "Start $$srv with verbose output"; \
 		printf "  \033[36m%-25s\033[0m %s\n" "kill-$$srv" "Stop $$srv"; \
+		printf "  \033[36m%-25s\033[0m %s\n" "kill-$$srv V=1" "Stop $$srv with verbose output"; \
 		printf "  \033[36m%-25s\033[0m %s\n" "log-$$srv" "Show logs for $$srv"; \
 	done
 
