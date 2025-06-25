@@ -6,6 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The project uses a **"Vibe Makefile"** - a generic service management system with clean output by default and verbose mode when needed.
 
+### Designed for Autonomous Agents
+This Vibe Makefile is specifically designed to make it easier for vibe coding agents, AI assistants, and other autonomous agents to handle starting and stopping multiple services without blocking operations. Key benefits for agents:
+- **Non-blocking service management** - Services run in background by default, agents don't get stuck waiting
+- **Easy log access for debugging** - Simple `make log-<service>` commands to get service logs
+- **Clear status reporting** - `make status` shows all services at once with clear indicators  
+- **Predictable output format** - Consistent formatting makes it easy for agents to parse results
+- **Automatic cleanup** - Handles stale processes and complex process trees automatically
+- **No manual PID tracking** - Agents don't need to manage process IDs or complex process hierarchies
+
 ### Core Services
 - `make run-server` - Start Python WebSocket server (shows command + 20s startup logs)
 - `make run-client` - Start React dev server (shows command + 20s startup logs)

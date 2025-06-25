@@ -53,6 +53,15 @@ cd ..
 
 This project uses a **"Vibe Makefile"** - a generic service management system that provides clean, minimal output by default with optional verbose mode.
 
+### Designed for Autonomous Agents
+This Vibe Makefile is specifically designed to make it easier for vibe coding agents, AI assistants, and other autonomous agents to handle starting and stopping multiple services without blocking operations. Key benefits for agents:
+- **Non-blocking service management** - Services run in background by default, agents don't get stuck waiting
+- **Easy log access for debugging** - Simple `make log-<service>` commands to get service logs  
+- **Clear status reporting** - `make status` shows all services at once with clear indicators
+- **Predictable output format** - Consistent formatting makes it easy for agents to parse results
+- **Automatic cleanup** - Handles stale processes and complex process trees automatically
+- **No manual PID tracking** - Agents don't need to manage process IDs or complex process hierarchies
+
 ### Prerequisites
 
 Ensure you have `make` installed on your system.

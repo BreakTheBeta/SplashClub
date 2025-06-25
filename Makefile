@@ -1,3 +1,57 @@
+# VIBE MAKEFILE - Generic Service Management System
+#
+# This is a "Vibe Makefile" that provides clean, minimal output by default with verbose mode available.
+# It manages multiple services (like servers and clients) with proper process tree handling and startup logging.
+#
+# DESIGNED FOR AUTONOMOUS AGENTS:
+# This Makefile is specifically designed to make it easier for vibe coding agents, AI assistants, 
+# and other autonomous agents to handle starting and stopping multiple services without blocking 
+# operations. Key benefits for agents:
+#   - Non-blocking service management (services run in background by default)
+#   - Easy log access for debugging (make log-<service>)  
+#   - Clear status reporting (make status shows all services at once)
+#   - Predictable output format for parsing
+#   - Automatic cleanup of stale processes
+#   - No need to manually track PIDs or complex process trees
+#
+# Core Commands:
+#   make run-server    - Start Python WebSocket server (shows command + startup logs)
+#   make run-client    - Start React dev server (shows command + startup logs)  
+#   make status        - Check status of all services
+#   make kill-server   - Stop server service
+#   make kill-client   - Stop client service
+#   make log-server    - View server logs
+#   make log-client    - View client logs
+#
+# Verbose Mode (add V=1 to any command):
+#   make run-server V=1    - Full verbose startup with detailed logging and emojis
+#   make kill-server V=1   - Detailed process tree killing with debug output
+#   make status V=1        - Enhanced status with health checks (if configured)
+#
+# Development Workflow:
+#   make run-server ATTACH=1   - Run server in foreground for debugging
+#   make run-client ATTACH=1   - Run client in foreground for debugging  
+#   make test                  - Run Python tests with uv run pytest
+#   make clean                 - Clean Python cache and service files
+#   make gen_types            - Generate TypeScript types from Pydantic models
+#
+# Key Features:
+#   - Clean minimal output by default (just shows command and logs)
+#   - Automatic process tree killing (handles yarn→vite and complex processes)
+#   - Startup display shows real-time logs then auto-detaches after timeout
+#   - Fresh logs every start (overwrites old logs for clean startup viewing)
+#   - Smart restart (automatically kills old processes before starting new ones)
+#
+# Adding New Services:
+#   1. Add to SERVICE_NAMES: SERVICE_NAMES := server client newservice
+#   2. Define command: newservice_CMD := your-command-here
+#   3. Optional: newservice_WORKDIR := ./path/to/workdir
+#   4. Optional: newservice_STOP_CMD := graceful-shutdown-command
+#   5. Optional: newservice_HEALTH := health-check-command
+#
+# IMPORTANT: Always use make commands (make run-server, make run-client) instead of 
+# running services directly. The Makefile handles proper service management and cleanup.
+
 .PHONY: help status $(addprefix run-,$(SERVICE_NAMES)) $(addprefix kill-,$(SERVICE_NAMES)) $(addprefix log-,$(SERVICE_NAMES)) clean test gen_types
 
 # Directory for PIDs and logs
